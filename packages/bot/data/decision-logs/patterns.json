@@ -1,1 +1,205 @@
-[]
+[
+  {
+    "trigger": {
+      "hasItems": [
+        "oak_log",
+        "oak_planks",
+        "diamond_axe"
+      ],
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "morning"
+    },
+    "action": {
+      "type": "move",
+      "target": "west"
+    },
+    "successRate": 0.6666666666666666,
+    "occurrences": 12
+  },
+  {
+    "trigger": {
+      "hasItems": [
+        "oak_log",
+        "oak_planks",
+        "diamond_axe"
+      ],
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "morning"
+    },
+    "action": {
+      "type": "dig_up",
+      "target": ""
+    },
+    "successRate": 0.6666666666666666,
+    "occurrences": 9
+  },
+  {
+    "trigger": {
+      "hasItems": [
+        "oak_log",
+        "oak_planks",
+        "diamond_axe"
+      ],
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": true,
+      "lowFood": false,
+      "timeOfDay": "morning"
+    },
+    "action": {
+      "type": "move",
+      "target": "north"
+    },
+    "successRate": 0.75,
+    "occurrences": 16
+  },
+  {
+    "trigger": {
+      "hasItems": [
+        "diamond_axe",
+        "gravel",
+        "flint"
+      ],
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": true,
+      "lowFood": false,
+      "timeOfDay": "evening"
+    },
+    "action": {
+      "type": "place",
+      "target": "crafting_table"
+    },
+    "successRate": 0.6666666666666666,
+    "occurrences": 3
+  },
+  {
+    "trigger": {
+      "hasItems": [
+        "diamond_axe",
+        "gravel",
+        "flint"
+      ],
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": true,
+      "lowFood": false,
+      "timeOfDay": "day"
+    },
+    "action": {
+      "type": "move",
+      "target": "east"
+    },
+    "successRate": 0.7,
+    "occurrences": 10
+  },
+  {
+    "trigger": {
+      "hasItems": [
+        "oak_sapling"
+      ],
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "day"
+    },
+    "action": {
+      "type": "mine",
+      "target": "oak_log"
+    },
+    "successRate": 0.5,
+    "occurrences": 6
+  },
+  {
+    "trigger": {
+      "hasItems": [
+        "stick",
+        "oak_planks",
+        "oak_log"
+      ],
+      "nearBlocks": [
+        "oak_log"
+      ],
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "night"
+    },
+    "action": {
+      "type": "craft",
+      "target": "oak_planks"
+    },
+    "successRate": 1,
+    "occurrences": 2
+  },
+  {
+    "trigger": {
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "night"
+    },
+    "action": {
+      "type": "place",
+      "target": "oak_planks"
+    },
+    "successRate": 1,
+    "occurrences": 2
+  },
+  {
+    "trigger": {
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "morning"
+    },
+    "action": {
+      "type": "move",
+      "target": "south"
+    },
+    "successRate": 0.6666666666666666,
+    "occurrences": 3
+  },
+  {
+    "trigger": {
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": false,
+      "lowFood": false,
+      "timeOfDay": "morning"
+    },
+    "action": {
+      "type": "move",
+      "target": "up"
+    },
+    "successRate": 0.5,
+    "occurrences": 2
+  },
+  {
+    "trigger": {
+      "nearBlocks": [
+        "birch_log"
+      ],
+      "lowHealth": true,
+      "lowFood": false,
+      "timeOfDay": "day"
+    },
+    "action": {
+      "type": "eat",
+      "target": "cooked_beef"
+    },
+    "successRate": 1,
+    "occurrences": 2
+  }
+]

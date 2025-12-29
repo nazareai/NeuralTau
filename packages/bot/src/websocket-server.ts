@@ -5,7 +5,7 @@ import type { GameState, GameAction, Decision, EmotionalState } from '@tau/share
 const logger = new Logger('WebSocket');
 
 export interface BroadcastEvent {
-  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem';
+  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup';
   timestamp: Date;
   data: any;
 }
@@ -140,11 +140,11 @@ export class TauWebSocketServer {
   }
 
   /**
-   * Broadcast activity status (crafting, smelting, etc.)
+   * Broadcast activity status (crafting, smelting, attacking, etc.)
    * Used to show visual indicators in the UI
    */
   broadcastActivity(activity: {
-    type: 'crafting' | 'smelting' | 'mining' | 'idle';
+    type: 'crafting' | 'smelting' | 'mining' | 'attacking' | 'idle';
     item?: string;
     active: boolean;
   }) {
@@ -168,6 +168,22 @@ export class TauWebSocketServer {
       type: 'heldItem',
       timestamp: new Date(),
       data: heldItem,
+    });
+  }
+
+  /**
+   * Broadcast item pickup notification for visual feedback
+   * Shows floating "+X item" text on the frontend
+   */
+  broadcastItemPickup(pickup: {
+    itemName: string;
+    displayName: string;
+    count: number;
+  }) {
+    this.broadcast({
+      type: 'itemPickup',
+      timestamp: new Date(),
+      data: pickup,
     });
   }
 

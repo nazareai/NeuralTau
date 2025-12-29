@@ -57,6 +57,8 @@ export default function Dashboard() {
   const [activity, setActivity] = useState<{ type: string; item?: string; active: boolean }>({ type: 'idle', active: false });
   const [heldItem, setHeldItem] = useState<{ name: string | null; displayName: string | null; action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' }>({ name: null, displayName: null, action: 'idle' });
   const [viewerPort, setViewerPort] = useState(3007);
+  const [itemPickups, setItemPickups] = useState<{ id: number; itemName: string; displayName: string; count: number }[]>([]);
+  const pickupIdRef = useRef(0);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -116,6 +118,21 @@ export default function Dashboard() {
 
         case 'heldItem':
           setHeldItem(message.data);
+          break;
+
+        case 'itemPickup':
+          // Add new pickup notification with unique ID
+          const newPickup = {
+            id: pickupIdRef.current++,
+            itemName: message.data.itemName,
+            displayName: message.data.displayName,
+            count: message.data.count,
+          };
+          setItemPickups(prev => [...prev, newPickup]);
+          // Remove after animation (2 seconds)
+          setTimeout(() => {
+            setItemPickups(prev => prev.filter(p => p.id !== newPickup.id));
+          }, 2000);
           break;
       }
     };
@@ -658,6 +675,28 @@ export default function Dashboard() {
           100% { transform: rotate(0deg) scale(1); }
         }
 
+        @keyframes pickupFloat {
+          0% { 
+            opacity: 0; 
+            transform: translateY(20px) scale(0.8); 
+          }
+          15% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1.1); 
+          }
+          30% { 
+            transform: translateY(-5px) scale(1); 
+          }
+          70% { 
+            opacity: 1; 
+            transform: translateY(-30px) scale(1); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-60px) scale(0.8); 
+          }
+        }
+
         @keyframes itemEat {
           0%, 100% { transform: translateY(0) rotate(0deg); }
           25% { transform: translateY(-15px) rotate(-10deg); }
@@ -1026,12 +1065,17 @@ export default function Dashboard() {
 
               {/* Activity Indicator */}
               {activity.active && activity.type !== 'idle' && (
-                <BlockBorder color={activity.type === 'crafting' ? '#A855F7' : '#F59E0B'}>
+                <BlockBorder color={
+                  activity.type === 'crafting' ? '#A855F7' : 
+                  activity.type === 'attacking' ? '#EF4444' : '#F59E0B'
+                }>
                   <div style={{
                     padding: '12px 16px',
                     background: activity.type === 'crafting'
                       ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%)'
-                      : 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
+                      : activity.type === 'attacking'
+                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.1) 100%)'
+                        : 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
                   }}>
                     <div style={{
                       display: 'flex',
@@ -1041,18 +1085,20 @@ export default function Dashboard() {
                     }}>
                       <span style={{
                         fontSize: '20px',
-                        animation: 'pulse 1s ease-in-out infinite',
+                        animation: activity.type === 'attacking' ? 'pulse 0.3s ease-in-out infinite' : 'pulse 1s ease-in-out infinite',
                       }}>
-                        {activity.type === 'crafting' ? '🔨' : '⛏️'}
+                        {activity.type === 'crafting' ? '🔨' : activity.type === 'attacking' ? '⚔️' : '⛏️'}
                       </span>
                       <span style={{
                         fontSize: '11px',
                         fontFamily: '"Press Start 2P", monospace',
-                        color: activity.type === 'crafting' ? '#A855F7' : '#F59E0B',
+                        color: activity.type === 'crafting' ? '#A855F7' : 
+                               activity.type === 'attacking' ? '#EF4444' : '#F59E0B',
                         textShadow: '1px 1px 0 #000',
-                        animation: 'pulse 1s ease-in-out infinite',
+                        animation: activity.type === 'attacking' ? 'pulse 0.3s ease-in-out infinite' : 'pulse 1s ease-in-out infinite',
                       }}>
-                        {activity.type === 'crafting' ? 'CRAFTING' : 'MINING'}
+                        {activity.type === 'crafting' ? 'CRAFTING' : 
+                         activity.type === 'attacking' ? 'ATTACKING' : 'MINING'}
                       </span>
                       {activity.item && (
                         <span style={{
@@ -1181,6 +1227,55 @@ export default function Dashboard() {
               </span>
             </div>
           )}
+
+          {/* Item Pickup Notifications - Center of screen, floating up */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none',
+            zIndex: 100,
+          }}>
+            {itemPickups.map((pickup) => (
+              <div
+                key={pickup.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.95) 0%, rgba(34, 197, 94, 0.95) 100%)',
+                  border: '4px solid #4ADE80',
+                  borderRadius: '8px',
+                  boxShadow: '0 0 30px rgba(74, 222, 128, 0.6), 0 4px 20px rgba(0, 0, 0, 0.3)',
+                  animation: 'pickupFloat 2s ease-out forwards',
+                }}
+              >
+                <span style={{
+                  fontSize: '24px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '2px 2px 0 #15803D, -1px -1px 0 #000',
+                }}>
+                  +{pickup.count}
+                </span>
+                <span style={{
+                  fontSize: '14px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '1px 1px 0 #000',
+                  textTransform: 'uppercase',
+                }}>
+                  {pickup.displayName}
+                </span>
+              </div>
+            ))}
+          </div>
 
           {/* Held Item/Hand Overlay - Always visible */}
           <div style={{

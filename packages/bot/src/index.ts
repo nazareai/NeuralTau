@@ -98,6 +98,17 @@ class TauBot {
       throw error;
     }
 
+    // Register item pickup callback for visual notifications
+    if (config.game.mode === 'minecraft') {
+      minecraftGame.onItemPickup((itemName, displayName, count) => {
+        this.wsServer.broadcastItemPickup({
+          itemName,
+          displayName,
+          count,
+        });
+      });
+    }
+
     // Display initial game state
     await this.displayGameState();
 
@@ -372,6 +383,8 @@ class TauBot {
         this.wsServer.broadcastActivity({ type: 'crafting', item: action.target, active: true });
       } else if (action.type === 'mine') {
         this.wsServer.broadcastActivity({ type: 'mining', item: action.target, active: true });
+      } else if (action.type === 'attack') {
+        this.wsServer.broadcastActivity({ type: 'attacking', item: action.target, active: true });
       }
 
       // Broadcast held item with action state for hand overlay
@@ -415,7 +428,7 @@ class TauBot {
       logger.info('Action result', { result, duration: `${actionDuration}ms` });
 
       // Broadcast activity end
-      if (action.type === 'craft' || action.type === 'mine') {
+      if (action.type === 'craft' || action.type === 'mine' || action.type === 'attack') {
         this.wsServer.broadcastActivity({ type: 'idle', active: false });
       }
 

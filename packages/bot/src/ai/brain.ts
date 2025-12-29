@@ -189,25 +189,24 @@ export class AIBrain {
         success = false;
       }
     } else if (action.type === 'move') {
-      // Movement-specific failure detection
-      // Match both "moved" and "walked" (different result formats)
-      const movedMatch = resultLower.match(/(?:moved|walked)\s+(\d+\.?\d*)/);
-      if (movedMatch) {
-        const distanceMoved = parseFloat(movedMatch[1]);
-
-        // Simple rule: if you moved at least 2 blocks, that's progress (success)
-        // This prevents "walked 5.9 blocks then blocked" from being a failure
-        if (distanceMoved >= 2.0) {
-          success = true;  // Made meaningful progress
-        } else if (distanceMoved >= 0.5) {
-          // Moved a little bit - check if blocked or reached destination
-          success = !resultLower.includes('blocked');
-        } else {
-          // Moved less than half a block = complete failure
-          success = false;
-        }
+      // Movement success = actually REACHED the destination or very close
+      // "Pathfinder couldn't reach X" = FAILURE (even if moved some blocks)
+      // "Reached near X (2.1 blocks away)" = SUCCESS
+      
+      if (resultLower.includes("couldn't reach") || resultLower.includes('could not reach')) {
+        // Pathfinder gave up - this is a FAILURE even if bot moved some distance
+        success = false;
+      } else if (resultLower.includes('reached') || resultLower.includes('arrived') || 
+                 resultLower.includes('close enough') || resultLower.includes('blocks away)')) {
+        // Actually reached or got very close to destination
+        success = true;
+      } else if (resultLower.includes('remaining')) {
+        // Has "remaining" distance - means didn't reach, FAILURE
+        success = false;
+      } else if (resultLower.includes('blocked') || resultLower.includes('stuck')) {
+        success = false;
       } else {
-        // No distance info, fall back to keyword check
+        // Fallback: check for general failure keywords
         success = !failureKeywords.some(kw => resultLower.includes(kw));
       }
     } else {
@@ -226,10 +225,11 @@ export class AIBrain {
       this.actionHistory = this.actionHistory.slice(-this.MAX_ACTION_HISTORY);
     }
 
-    logger.debug('Action result recorded', {
-      type: action.type,
-      target: action.target,
-      success,
+    // Log at INFO level to verify success/failure detection in logs
+    logger.info('[LEARNING] Action recorded', {
+      action: `${action.type}${action.target ? ':' + action.target : ''}`,
+      success: success ? '✓' : '✗',
+      result: result.substring(0, 60),
       historySize: this.actionHistory.length,
     });
 
@@ -525,9 +525,9 @@ export class AIBrain {
     );
     if (nearbyFood?.length > 0) context.animals = nearbyFood.slice(0, 3);
 
-    // Recent actions - with error info for failures
+    // Recent actions - with error info for failures (5 for pattern detection)
     if (this.actionHistory.length > 0) {
-      context.recent = this.actionHistory.slice(-3).map(e => {
+      context.recent = this.actionHistory.slice(-5).map(e => {
         const entry: any = {
           a: e.action.type,
           ok: e.success,
@@ -590,7 +590,7 @@ export class AIBrain {
         : [],
       nearbyEntities: meta.nearbyEntities || [],
       time: meta.time || 'day',
-      recentActions: this.actionHistory.slice(-3).map(h => ({
+      recentActions: this.actionHistory.slice(-5).map(h => ({
         type: h.action.type,
         target: h.action.target || '',
         success: h.success,
@@ -630,6 +630,36 @@ export class AIBrain {
         patterns.push(`⚠️ ${consecutiveFailures} consecutive failures - TRY COMPLETELY DIFFERENT APPROACH`);
       }
 
+      // DETECT MOVEMENT LOOPS - bot going back and forth without reaching destination
+      const moveActions = recentActions.filter(a => a.action.type === 'move');
+      if (moveActions.length >= 3) {
+        const failedMoves = moveActions.filter(a => !a.success);
+        const directions = failedMoves.map(a => a.action.target);
+        
+        // Check if same directions keep failing
+        if (failedMoves.length >= 2) {
+          const uniqueDirs = [...new Set(directions)];
+          patterns.push(`🔄 STUCK: Movement to ${uniqueDirs.join(', ')} keeps failing - STOP MOVING, try: eat food, place crafting_table, craft tools, or mine blocks to create new path`);
+          logger.warn('[LEARNING] 🔄 MOVEMENT STUCK DETECTED', { 
+            failedDirections: uniqueDirs,
+            failCount: failedMoves.length 
+          });
+        }
+        
+        // Check for back-and-forth pattern (north-west-north-west...)
+        if (directions.length >= 4) {
+          const last4 = directions.slice(-4);
+          const isLooping = (last4[0] === last4[2] && last4[1] === last4[3]) || 
+                           (last4[0] === last4[1] && last4[2] === last4[3]);
+          if (isLooping) {
+            patterns.push(`🔄 LOOP DETECTED: Repeating ${last4.join('→')} - This direction doesn't work! Try: dig_up, mine stone to create passage, or completely different action`);
+            logger.warn('[LEARNING] 🔄 MOVEMENT LOOP DETECTED', { 
+              pattern: last4.join('→') 
+            });
+          }
+        }
+      }
+
       // Analyze failed actions with their error reasons
       const failedActions = recentActions.filter(a => !a.success);
       const failureInsights: string[] = [];
@@ -653,6 +683,12 @@ export class AIBrain {
           failureInsights.push(`Path to ${action.target || 'target'} is blocked - try different direction`);
         } else if (resultLower.includes('not collected')) {
           failureInsights.push(`Mined ${action.target} but didn't collect - wrong tool or item fell`);
+        } else if (resultLower.includes("couldn't reach") || resultLower.includes('remaining')) {
+          // Movement failed to reach destination
+          failureInsights.push(`Cannot reach ${action.target} - path is blocked/obstructed. Try: mine through obstacles, dig_up, or find different route`);
+        } else if (resultLower.includes('suitable spot') || resultLower.includes('clear ground')) {
+          // Can't place block
+          failureInsights.push(`Cannot place ${action.target} here - need to find/create clear ground nearby`);
         }
       }
       
@@ -755,7 +791,7 @@ export class AIBrain {
             : [],
           nearbyEntities: meta.nearbyEntities || [],
           time: meta.time || 'day',
-          recentActions: this.actionHistory.slice(-3).map(h => ({
+          recentActions: this.actionHistory.slice(-5).map(h => ({
             type: h.action.type,
             target: h.action.target || '',
             success: h.success,
@@ -839,8 +875,8 @@ export class AIBrain {
       lines.push(`⚠️ ${consecutiveFailures} failures - try different approach`);
     }
 
-    // Show last 3 actions only (instead of 5)
-    const recentActions = this.actionHistory.slice(-3);
+    // Show last 5 actions for better pattern detection
+    const recentActions = this.actionHistory.slice(-5);
     lines.push('Recent:');
     recentActions.forEach((entry) => {
       const status = entry.success ? '✓' : '✗';

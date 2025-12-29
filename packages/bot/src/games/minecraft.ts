@@ -127,6 +127,9 @@ export class MinecraftGame {
   };
   private statsInterval: NodeJS.Timeout | null = null;
 
+  // Callback for item pickups (for UI notifications)
+  private onItemPickupCallback: ((itemName: string, displayName: string, count: number) => void) | null = null;
+
   // Action lock to prevent concurrent mining/movement operations
   private actionInProgress: string | null = null;
 
@@ -552,6 +555,40 @@ export class MinecraftGame {
             // Mobs behind walls won't be logged (human-like awareness)
           }
           // Mobs behind the player won't be logged (human-like awareness)
+        }
+      }
+    });
+
+    // Listen for item pickups - broadcast to UI for visual notification
+    this.bot.on('playerCollect', (collector, collected) => {
+      // Only care about our own pickups
+      if (collector.username !== this.bot?.username) return;
+      
+      // Get item info from the collected entity
+      const itemEntity = collected as any;
+      if (itemEntity && itemEntity.metadata) {
+        // The item info is in metadata[8] for dropped items
+        const itemInfo = itemEntity.metadata?.[8];
+        if (itemInfo && itemInfo.itemId !== undefined) {
+          const itemId = itemInfo.itemId;
+          const itemCount = itemInfo.itemCount || 1;
+          
+          // Look up item name from mcData
+          const item = this.mcData?.items?.[itemId];
+          const itemName = item?.name || 'item';
+          const displayName = item?.displayName || itemName.replace(/_/g, ' ');
+          
+          this.sessionStats.itemsCollected += itemCount;
+          
+          logger.info('[ITEM-PICKUP] Collected item', {
+            item: itemName,
+            count: itemCount
+          });
+          
+          // Call the callback if registered (for UI notification)
+          if (this.onItemPickupCallback) {
+            this.onItemPickupCallback(itemName, displayName, itemCount);
+          }
         }
       }
     });
@@ -3009,14 +3046,28 @@ export class MinecraftGame {
 
     const entity = entities[0];
     const distance = entity.position.distanceTo(this.bot.entity.position);
+    const entityHealth = (entity as any).health || '?';
+
+    logger.info('[ATTACK-HUMAN] Step 1: Target acquired', {
+      target: entity.name || target,
+      distance: distance.toFixed(1),
+      health: entityHealth,
+      position: `${entity.position.x.toFixed(0)}, ${entity.position.y.toFixed(0)}, ${entity.position.z.toFixed(0)}`
+    });
 
     try {
       // EQUIP BEST WEAPON before attacking
-      await this.equipBestWeapon();
+      logger.info('[ATTACK-HUMAN] Step 2: Equipping weapon');
+      const weaponResult = await this.equipBestWeapon();
+      const equippedWeapon = this.bot.heldItem?.name || 'fists';
+      logger.info('[ATTACK-HUMAN] Weapon ready', { weapon: equippedWeapon });
 
       // If too far, navigate closer first
       if (distance > 3) {
-        logger.info(`${target} is ${distance.toFixed(1)} blocks away, moving closer`);
+        logger.info('[ATTACK-HUMAN] Step 3: Approaching target', {
+          currentDistance: distance.toFixed(1),
+          targetDistance: 2
+        });
 
         const movements = new Movements(this.bot);
         movements.allowSprinting = true; // Sprint to catch up to target
@@ -3050,32 +3101,58 @@ export class MinecraftGame {
             }
           }, 100);
         });
+        
+        const newDist = entity.position.distanceTo(this.bot.entity.position);
+        logger.info('[ATTACK-HUMAN] Approach complete', { newDistance: newDist.toFixed(1) });
+      } else {
+        logger.info('[ATTACK-HUMAN] Step 3: Already in range', { distance: distance.toFixed(1) });
       }
 
       // Look at the entity with smooth transition (prevents jerky snap)
+      logger.info('[ATTACK-HUMAN] Step 4: Looking at target');
       const entityCenter = entity.position.offset(0, entity.height * 0.5, 0);
       await this.smoothLookAt(entityCenter.x, entityCenter.y, entityCenter.z, 150);
 
       // Attack multiple times for effectiveness
+      logger.info('[ATTACK-HUMAN] Step 5: Attacking!', { weapon: equippedWeapon });
+      let hits = 0;
       for (let i = 0; i < 3; i++) {
         this.bot.swingArm('right'); // Arm swing animation
         await this.bot.attack(entity);
+        hits++;
+        
+        logger.info(`[ATTACK-HUMAN] Hit ${hits}/3`, { 
+          targetHealth: (entity as any).health?.toFixed(0) || '?'
+        });
+        
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Check if entity is dead
         if (!this.bot.entities[entity.id]) {
+          logger.info('[ATTACK-HUMAN] Step 6: Target eliminated!', {
+            target: entity.name || target,
+            hitsLanded: hits
+          });
           return `Killed ${target}!`;
         }
       }
       
-      return `Attacked ${target} (${entity.health?.toFixed(0) || '?'} health remaining)`;
+      const remainingHealth = (entity as any).health?.toFixed(0) || '?';
+      logger.info('[ATTACK-HUMAN] Step 6: Combat round complete', {
+        target: entity.name || target,
+        hitsLanded: hits,
+        remainingHealth
+      });
+      
+      return `Attacked ${target} (${remainingHealth} health remaining)`;
     } catch (error) {
+      logger.error('[ATTACK-HUMAN] Attack failed', { target, error });
       return `Failed to attack ${target}: ${error}`;
     }
   }
 
   /**
-   * Craft an item - smart crafting with timeout protection
+   * Craft an item - smart crafting with timeout protection and human-like animation
    */
   private async craft(itemName: string): Promise<string> {
     if (!this.bot) return 'Bot not initialized';
@@ -3088,41 +3165,132 @@ export class MinecraftGame {
       return `Unknown item: ${itemName} (tried: ${itemNameNormalized})`;
     }
 
+    logger.info('[CRAFT-HUMAN] Step 1: Preparing to craft', { item: itemNameNormalized });
+
     // Close any open windows first (fixes crafting hanging)
     if (this.bot.currentWindow) {
-      logger.debug('[CRAFT] Closing open window before crafting');
+      logger.debug('[CRAFT-HUMAN] Closing open window before crafting');
       this.bot.closeWindow(this.bot.currentWindow);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Check for nearby crafting table first - prefer using it
-    const craftingTable = this.bot.findBlock({
+    // Check for nearby crafting table - search wider radius first
+    let craftingTable = this.bot.findBlock({
       matching: this.mcData.blocksByName['crafting_table']?.id,
-      maxDistance: 4,
+      maxDistance: 32,  // Search wider - we'll navigate if needed
     });
 
-    // If crafting table nearby, use it for all crafting (more reliable)
+    // If not found in world, check our memory for placed crafting tables
+    if (!craftingTable) {
+      const rememberedBlocks = this.getNearbyFunctionalBlocks();
+      const rememberedTable = rememberedBlocks.find(b => b.type === 'crafting_table');
+      if (rememberedTable && rememberedTable.distance < 50) {
+        logger.info('[CRAFT-HUMAN] Found remembered crafting table in memory', {
+          position: `${rememberedTable.position.x}, ${rememberedTable.position.y}, ${rememberedTable.position.z}`,
+          distance: rememberedTable.distance.toFixed(1)
+        });
+        // Try to find it in the world at that position
+        const blockAtPos = this.bot.blockAt(new (require('vec3'))(
+          rememberedTable.position.x,
+          rememberedTable.position.y,
+          rememberedTable.position.z
+        ));
+        if (blockAtPos && blockAtPos.name === 'crafting_table') {
+          craftingTable = blockAtPos;
+        }
+      }
+    }
+
+    // If crafting table found but far away, navigate to it first
     if (craftingTable) {
       const dist = this.bot.entity.position.distanceTo(craftingTable.position);
-      if (dist <= 4) {
+      if (dist > 4) {
+        logger.info('[CRAFT-HUMAN] Crafting table found but far away, navigating...', {
+          distance: dist.toFixed(1),
+          position: `${craftingTable.position.x}, ${craftingTable.position.y}, ${craftingTable.position.z}`
+        });
+        
+        // Navigate to the crafting table
+        try {
+          const { Movements, goals } = require('mineflayer-pathfinder');
+          const movements = new Movements(this.bot);
+          movements.canDig = false;  // Don't dig to reach crafting table
+          this.bot.pathfinder.setMovements(movements);
+          
+          const goal = new goals.GoalNear(
+            craftingTable.position.x,
+            craftingTable.position.y,
+            craftingTable.position.z,
+            2  // Get within 2 blocks
+          );
+          
+          await this.bot.pathfinder.goto(goal);
+          logger.info('[CRAFT-HUMAN] Reached crafting table');
+        } catch (navError) {
+          logger.warn('[CRAFT-HUMAN] Could not navigate to crafting table', { error: navError });
+          // Continue anyway - maybe we can still reach it
+        }
+      }
+    }
+
+    // Get current inventory count of target item
+    const beforeCount = this.bot.inventory.items()
+      .filter(i => i.name === itemNameNormalized)
+      .reduce((sum, i) => sum + i.count, 0);
+
+    // If crafting table available (we may have navigated to it), use it
+    if (craftingTable) {
+      // Recheck distance after potential navigation
+      const dist = this.bot.entity.position.distanceTo(craftingTable.position);
+      if (dist <= 5) {  // Slightly larger radius to account for navigation accuracy
         const recipe = this.bot.recipesFor(item.id, null, 1, craftingTable)[0];
         if (recipe) {
+          logger.info('[CRAFT-HUMAN] Step 2: Using crafting table', { 
+            distance: dist.toFixed(1),
+            position: `${craftingTable.position.x}, ${craftingTable.position.y}, ${craftingTable.position.z}`
+          });
+
           // Look at the crafting table with smooth transition
+          logger.info('[CRAFT-HUMAN] Step 3: Looking at crafting table');
           await this.smoothLookAt(
             craftingTable.position.x + 0.5,
             craftingTable.position.y + 0.5,
             craftingTable.position.z + 0.5,
-            150
+            200
           );
 
-          logger.info(`[CRAFT] Crafting ${itemNameNormalized} using workbench at ${craftingTable.position}`);
+          // Human pause before interacting
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          logger.info('[CRAFT-HUMAN] Step 4: Opening crafting table and crafting', { 
+            item: itemNameNormalized,
+            recipe: (recipe.result as any)?.name || itemNameNormalized
+          });
+          
           try {
+            const startTime = Date.now();
             await this.craftWithTimeout(recipe, 1, craftingTable, 5000);
-            // Visual feedback: swing arm after crafting
-            this.bot.swingArm('right');
-            return `Crafted ${itemNameNormalized}`;
+            const elapsed = Date.now() - startTime;
+            
+            // Visual feedback: crafting animation
+            await this.craftingAnimation();
+            
+            // Get new count
+            const afterCount = this.bot.inventory.items()
+              .filter(i => i.name === itemNameNormalized)
+              .reduce((sum, i) => sum + i.count, 0);
+            const gained = afterCount - beforeCount;
+            
+            logger.info('[CRAFT-HUMAN] Step 5: Crafting complete!', { 
+              item: itemNameNormalized,
+              gained: gained,
+              totalNow: afterCount,
+              durationMs: elapsed
+            });
+            
+            return `Crafted ${itemNameNormalized} (now have ${afterCount})`;
           } catch (error: any) {
-            logger.error(`[CRAFT] Workbench craft failed`, { error: error.message, item: itemNameNormalized });
+            logger.error('[CRAFT-HUMAN] Workbench craft failed', { error: error.message, item: itemNameNormalized });
             return `Failed to craft ${itemNameNormalized}: ${error.message}`;
           }
         }
@@ -3132,20 +3300,74 @@ export class MinecraftGame {
     // Try 2x2 inventory crafting (works for planks, sticks, etc.)
     const recipe = this.bot.recipesFor(item.id, null, 1, null)[0];
     if (recipe) {
-      logger.info(`[CRAFT] Crafting ${itemNameNormalized} using inventory (2x2)`);
+      logger.info('[CRAFT-HUMAN] Step 2: Using inventory crafting (2x2)', { 
+        item: itemNameNormalized,
+        recipe: (recipe.result as any)?.name || itemNameNormalized
+      });
+      
+      // Human-like: look down at hands while crafting
+      logger.info('[CRAFT-HUMAN] Step 3: Looking down at inventory');
+      const currentYaw = this.bot.entity.yaw;
+      await this.bot.look(currentYaw, 0.8, false); // Look down at hands
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
       try {
+        const startTime = Date.now();
+        logger.info('[CRAFT-HUMAN] Step 4: Crafting item');
         await this.craftWithTimeout(recipe, 1, null, 5000);
-        // Visual feedback: swing arm after crafting
-        this.bot.swingArm('right');
-        return `Crafted ${itemNameNormalized}`;
+        const elapsed = Date.now() - startTime;
+        
+        // Visual feedback: crafting animation
+        await this.craftingAnimation();
+        
+        // Look back to normal
+        await this.bot.look(currentYaw, 0, false);
+        
+        // Get new count
+        const afterCount = this.bot.inventory.items()
+          .filter(i => i.name === itemNameNormalized)
+          .reduce((sum, i) => sum + i.count, 0);
+        const gained = afterCount - beforeCount;
+        
+        logger.info('[CRAFT-HUMAN] Step 5: Crafting complete!', { 
+          item: itemNameNormalized,
+          gained: gained,
+          totalNow: afterCount,
+          durationMs: elapsed
+        });
+        
+        return `Crafted ${itemNameNormalized} (now have ${afterCount})`;
       } catch (error: any) {
-        logger.error(`[CRAFT] Inventory craft failed`, { error: error.message, item: itemNameNormalized });
+        logger.error('[CRAFT-HUMAN] Inventory craft failed', { error: error.message, item: itemNameNormalized });
         // If inventory craft fails, maybe we need a crafting table
         return `Failed to craft ${itemNameNormalized}: ${error.message}. Try near a crafting table.`;
       }
     }
 
+    logger.warn('[CRAFT-HUMAN] No recipe available', { 
+      item: itemNameNormalized,
+      reason: 'Missing materials or need crafting table'
+    });
     return `No recipe for ${itemNameNormalized} (missing materials or need crafting table)`;
+  }
+
+  /**
+   * Human-like crafting animation - arm swings and brief pause
+   */
+  private async craftingAnimation(): Promise<void> {
+    if (!this.bot) return;
+    
+    // Multiple arm swings like placing items in crafting grid
+    for (let i = 0; i < 3; i++) {
+      this.bot.swingArm('right');
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+    
+    // Brief pause as if picking up crafted item
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Final arm swing to pick up result
+    this.bot.swingArm('right');
   }
 
   /**
@@ -4228,14 +4450,47 @@ ${aiAnalysis}
         }
       }
 
-      // No optimal tool found - warn but continue with hand
+      // No optimal tool found - TRY TO CRAFT ONE
+      // Reuse toolType from fallback pass above (or recalculate if needed)
+      const neededToolType = toolType || toolCategory[0]?.split('_').pop() || '';
+      
+      if (neededToolType) {
+        const craftResult = await this.tryCraftTool(neededToolType);
+        if (craftResult.success && craftResult.toolName) {
+          // Successfully crafted - now equip it
+          const craftedTool = this.bot.inventory.items().find(item => item.name === craftResult.toolName);
+          if (craftedTool) {
+            try {
+              await this.bot.equip(craftedTool, 'hand');
+              logger.info('[TOOL-SELECT] Crafted and equipped missing tool', {
+                tool: craftResult.toolName,
+                block: blockName
+              });
+              return {
+                equipped: true,
+                toolName: craftResult.toolName,
+                reason: `Crafted ${craftResult.toolName} for ${blockName}`
+              };
+            } catch (error) {
+              logger.error('[TOOL-SELECT] Failed to equip crafted tool', { tool: craftResult.toolName, error });
+            }
+          }
+        } else {
+          logger.debug('[TOOL-SELECT] Could not craft tool', { 
+            toolType: neededToolType, 
+            reason: craftResult.reason 
+          });
+        }
+      }
+
+      // Still no tool - warn but continue with hand
       const currentTool = this.bot.heldItem?.name || null;
       const digDecision = shouldDigBlock(blockName, currentTool);
 
       return {
         equipped: false,
         toolName: currentTool,
-        reason: 'No optimal tool in inventory',
+        reason: 'No optimal tool in inventory and could not craft',
         warning: digDecision.shouldDig
           ? `Mining ${blockName} with ${currentTool || 'hand'} - will be slow`
           : digDecision.reason
@@ -4247,6 +4502,153 @@ ${aiAnalysis}
       equipped: false,
       toolName: this.bot.heldItem?.name || null,
       reason: 'Unknown block type - using current tool'
+    };
+  }
+
+  /**
+   * Try to craft a tool of the specified type
+   * Will craft the best available (stone > wooden) based on materials
+   */
+  private async tryCraftTool(toolType: 'axe' | 'pickaxe' | 'shovel' | 'hoe' | 'sword' | string): Promise<{
+    success: boolean;
+    toolName: string | null;
+    reason: string;
+  }> {
+    if (!this.bot) {
+      return { success: false, toolName: null, reason: 'Bot not initialized' };
+    }
+
+    const inventory = this.bot.inventory.items();
+    
+    // Count materials
+    const stickCount = inventory.filter(i => i.name === 'stick').reduce((sum, i) => sum + i.count, 0);
+    const planksCount = inventory.filter(i => i.name.includes('planks')).reduce((sum, i) => sum + i.count, 0);
+    const cobbleCount = inventory.filter(i => i.name === 'cobblestone').reduce((sum, i) => sum + i.count, 0);
+    const ironCount = inventory.filter(i => i.name === 'iron_ingot').reduce((sum, i) => sum + i.count, 0);
+    const diamondCount = inventory.filter(i => i.name === 'diamond').reduce((sum, i) => sum + i.count, 0);
+    const logCount = inventory.filter(i => i.name.includes('log')).reduce((sum, i) => sum + i.count, 0);
+
+    // Materials needed per tool type
+    const toolMaterials: Record<string, number> = {
+      'axe': 3,      // 3 material + 2 sticks
+      'pickaxe': 3,  // 3 material + 2 sticks
+      'shovel': 1,   // 1 material + 2 sticks
+      'hoe': 2,      // 2 material + 2 sticks
+      'sword': 2,    // 2 material + 1 stick
+    };
+
+    const materialNeeded = toolMaterials[toolType] || 3;
+    const sticksNeeded = toolType === 'sword' ? 1 : 2;
+
+    logger.info('[TOOL-CRAFT] Checking materials for tool', {
+      toolType,
+      materialNeeded,
+      sticksNeeded,
+      have: { sticks: stickCount, planks: planksCount, cobble: cobbleCount, iron: ironCount, logs: logCount }
+    });
+
+    // Helper to craft sticks if needed
+    const ensureSticks = async (needed: number): Promise<boolean> => {
+      if (stickCount >= needed) return true;
+      
+      const sticksToMake = needed - stickCount;
+      const planksNeededForSticks = Math.ceil(sticksToMake / 4) * 2; // 2 planks = 4 sticks
+      
+      // Check if we need to make planks first
+      let currentPlanks = inventory.filter(i => i.name.includes('planks')).reduce((sum, i) => sum + i.count, 0);
+      
+      if (currentPlanks < planksNeededForSticks) {
+        // Try to make planks from logs
+        const logsAvailable = inventory.filter(i => i.name.includes('log')).reduce((sum, i) => sum + i.count, 0);
+        const logsNeeded = Math.ceil((planksNeededForSticks - currentPlanks) / 4);
+        
+        if (logsAvailable >= logsNeeded) {
+          logger.info('[TOOL-CRAFT] Crafting planks from logs', { logsNeeded });
+          const result = await this.craft('oak_planks');
+          if (!result.includes('Crafted')) {
+            logger.warn('[TOOL-CRAFT] Failed to craft planks', { result });
+            return false;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+          return false; // Not enough materials
+        }
+      }
+      
+      // Now craft sticks
+      logger.info('[TOOL-CRAFT] Crafting sticks');
+      const result = await this.craft('stick');
+      if (!result.includes('Crafted')) {
+        logger.warn('[TOOL-CRAFT] Failed to craft sticks', { result });
+        return false;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return true;
+    };
+
+    // Try crafting in order: diamond > iron > stone > wooden
+    
+    // Diamond tool
+    if (diamondCount >= materialNeeded) {
+      if (await ensureSticks(sticksNeeded)) {
+        const toolName = `diamond_${toolType}`;
+        const result = await this.craft(toolName);
+        if (result.includes('Crafted')) {
+          return { success: true, toolName, reason: 'Crafted diamond tool' };
+        }
+      }
+    }
+
+    // Iron tool
+    if (ironCount >= materialNeeded) {
+      if (await ensureSticks(sticksNeeded)) {
+        const toolName = `iron_${toolType}`;
+        const result = await this.craft(toolName);
+        if (result.includes('Crafted')) {
+          return { success: true, toolName, reason: 'Crafted iron tool' };
+        }
+      }
+    }
+
+    // Stone tool
+    if (cobbleCount >= materialNeeded) {
+      if (await ensureSticks(sticksNeeded)) {
+        const toolName = `stone_${toolType}`;
+        const result = await this.craft(toolName);
+        if (result.includes('Crafted')) {
+          return { success: true, toolName, reason: 'Crafted stone tool' };
+        }
+      }
+    }
+
+    // Wooden tool (last resort)
+    // Need planks for the tool head
+    const totalPlanksNeeded = materialNeeded + (stickCount < sticksNeeded ? Math.ceil((sticksNeeded - stickCount) / 4) * 2 : 0);
+    
+    if (planksCount >= materialNeeded || logCount >= 1) {
+      // Ensure we have planks
+      if (planksCount < materialNeeded && logCount >= 1) {
+        logger.info('[TOOL-CRAFT] Crafting planks for wooden tool');
+        const result = await this.craft('oak_planks');
+        if (!result.includes('Crafted')) {
+          return { success: false, toolName: null, reason: 'Failed to craft planks' };
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (await ensureSticks(sticksNeeded)) {
+        const toolName = `wooden_${toolType}`;
+        const result = await this.craft(toolName);
+        if (result.includes('Crafted')) {
+          return { success: true, toolName, reason: 'Crafted wooden tool' };
+        }
+      }
+    }
+
+    return { 
+      success: false, 
+      toolName: null, 
+      reason: `Not enough materials for ${toolType}. Need: ${materialNeeded} material + ${sticksNeeded} sticks` 
     };
   }
 
@@ -5093,6 +5495,13 @@ ${aiAnalysis}
       name: heldItem.name,
       displayName: heldItem.displayName || heldItem.name.replace(/_/g, ' '),
     };
+  }
+
+  /**
+   * Register a callback for item pickups (for UI notifications)
+   */
+  onItemPickup(callback: (itemName: string, displayName: string, count: number) => void): void {
+    this.onItemPickupCallback = callback;
   }
 
   /**

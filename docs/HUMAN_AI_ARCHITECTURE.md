@@ -456,6 +456,39 @@ humanBehaviorManager.exitBatchMode();
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Action History Learning (In-Session)
+
+The AI learns from recent actions within a session to avoid repeating mistakes:
+
+```typescript
+// brain.ts - recordActionResult()
+
+ACTION_HISTORY_SIZE = 5;  // AI sees last 5 actions for pattern detection
+
+// Success Detection by Action Type:
+// ─────────────────────────────────────────────────────────────────
+// mine    → "mined" + collected item = ✓ | "not collected" = ✗
+// craft   → "Crafted X" = ✓ | anything else = ✗
+// move    → "reached"/"close enough" = ✓ | "couldn't reach"/remaining = ✗
+// attack  → killed/damaged = ✓ | failed/couldn't = ✗
+// place   → "placed" = ✓ | "couldn't place" = ✗
+```
+
+**Loop Detection Patterns:**
+
+| Pattern | Detection | AI Guidance |
+|---------|-----------|-------------|
+| 2+ failed moves | Same directions failing | "STOP MOVING, try: craft tools, mine blocks" |
+| north→west→north→west | Back-and-forth loop | "LOOP DETECTED - dig_up or mine passage" |
+| 3+ consecutive failures | Any action type | "TRY COMPLETELY DIFFERENT APPROACH" |
+
+**Example Learning Output:**
+```
+🔄 STUCK: Movement to north, west keeps failing
+🔴 FAILURES: Cannot reach north - path blocked. Try: mine through obstacles
+❌ AVOID these targets: north, west
+```
+
 ### Emotion System
 
 ```typescript
@@ -472,6 +505,41 @@ curiosity        │ New area, discovery   │ Explore
 satisfaction     │ Goal completion       │ Seek new goals
 boredom          │ Repetitive actions    │ Try something new
 excitement       │ Rare finds (diamond)  │ Express joy
+```
+
+### Visual Feedback System (Dashboard)
+
+The web dashboard provides real-time visual feedback for all bot actions:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    VISUAL FEEDBACK EVENTS                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Activity Indicators (Left Sidebar):                         │
+│  ┌────────────────────────────────────────┐                  │
+│  │ ⛏️ MINING    - orange, normal pulse    │                  │
+│  │ 🔨 CRAFTING  - purple, normal pulse    │                  │
+│  │ ⚔️ ATTACKING - red, fast pulse (0.3s)  │                  │
+│  └────────────────────────────────────────┘                  │
+│                                                              │
+│  Item Pickup Notifications (Center Screen):                  │
+│  ┌────────────────────────────────────────┐                  │
+│  │     +3 OAK LOG                         │ ← floats up     │
+│  │     +1 DIAMOND                         │   & fades out   │
+│  └────────────────────────────────────────┘                  │
+│                                                              │
+│  Held Item Overlay (Bottom Right):                           │
+│  - Shows current tool/item with action animation             │
+│  - idle → bob, mining → swing, attacking → slash             │
+│                                                              │
+│  WebSocket Events:                                           │
+│  • itemPickup  → floating +X notification                    │
+│  • activity    → sidebar indicator                           │
+│  • heldItem    → hand overlay with animation                 │
+│  • emotion     → emotional state display                     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -578,6 +646,13 @@ USER OBSERVES ◄─────────────────────
 | Experience memory system | ✅ Done | `experience-memory.ts` |
 | Emotion system | ✅ Done | `emotion-manager.ts` |
 | **Animal detection with LOS** | ✅ Done | `human-behavior-patterns.ts` |
+| **Action history learning (5 actions)** | ✅ Done | `brain.ts` |
+| **Movement loop detection** | ✅ Done | `brain.ts` |
+| **Correct success/failure detection** | ✅ Done | `brain.ts` |
+| **Smart crafting table navigation** | ✅ Done | `minecraft.ts` |
+| **Item pickup visual notifications** | ✅ Done | `page.tsx`, `websocket-server.ts` |
+| **Attack activity broadcast** | ✅ Done | `index.ts`, `page.tsx` |
+| **Smart tool crafting** | ✅ Done | `minecraft.ts` |
 
 ### ⚠️ Needs Improvement
 
@@ -699,6 +774,11 @@ MEMORY_DISTANCE = 20;               // Skip FOV/LOS for blocks >20m
 movements.digCost = 5;              // Willing to break vegetation
 movements.allowSprinting = false;   // Natural speed
 movements.allowParkour = false;     // No perfect jumps
+
+// Learning
+ACTION_HISTORY_SIZE = 5;            // Last 5 actions for pattern detection
+MAX_ACTION_HISTORY = 20;            // Full history buffer
+CONSECUTIVE_FAIL_THRESHOLD = 2;     // Trigger "try different approach"
 
 // Behavior
 lookFrequency = 8000;               // 8s between idle looks
