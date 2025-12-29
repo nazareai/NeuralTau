@@ -1,0 +1,122 @@
+{
+  "lastUpdated": "2025-12-29T18:16:07.041Z",
+  "totalEntries": 3,
+  "entries": [
+    {
+      "timestamp": "2025-12-29T18:15:00.553Z",
+      "context": {
+        "position": {
+          "x": -116,
+          "y": 45,
+          "z": -71
+        },
+        "health": 17.66666603088379,
+        "food": 15,
+        "inventory": [
+          "oak_log",
+          "oak_planks",
+          "diamond_axe",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "Approach 21m west tree."
+      },
+      "result": {
+        "success": true,
+        "message": "Pathfinder couldn't reach west - moved 8.3 blocks, 7.3 remaining"
+      }
+    },
+    {
+      "timestamp": "2025-12-29T18:15:15.521Z",
+      "context": {
+        "position": {
+          "x": -121,
+          "y": 41,
+          "z": -66
+        },
+        "health": 17.66666603088379,
+        "food": 15,
+        "inventory": [
+          "oak_log",
+          "oak_planks",
+          "diamond_axe",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "wooden_pickaxe",
+        "reasoning": "Need pickaxe to mine stone underground."
+      },
+      "result": {
+        "success": false,
+        "message": "No recipe for wooden_pickaxe (missing materials or need crafting table)"
+      }
+    },
+    {
+      "timestamp": "2025-12-29T18:15:49.126Z",
+      "context": {
+        "position": {
+          "x": -121,
+          "y": 41,
+          "z": -66
+        },
+        "health": 17.66666603088379,
+        "food": 15,
+        "inventory": [
+          "oak_log",
+          "oak_planks",
+          "diamond_axe",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "wooden_pickaxe",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escape underground to surface"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 6 blocks (Y: 41 → 47). Use dig_up again (~15 more to surface)."
+      }
+    }
+  ]
+}

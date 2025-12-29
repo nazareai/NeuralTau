@@ -1,0 +1,29 @@
+{
+  "name": "tau",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Autonomous AI Streamer with Crypto Wallet",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "start": "pnpm --filter @tau/launcher start",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "bot": "pnpm --filter @tau/bot dev",
+    "web": "pnpm --filter @tau/web dev",
+    "bot:prod": "pnpm --filter @tau/bot start",
+    "setup": "pnpm install && cd packages/shared && pnpm build && cd ../.. && echo '\n✅ Setup complete! Now copy packages/bot/.env.example to packages/bot/.env and add your API keys.\n'"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

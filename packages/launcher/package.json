@@ -1,0 +1,12 @@
+{
+  "name": "@tau/launcher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

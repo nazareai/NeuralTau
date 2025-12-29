@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pnpm build:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm --filter web build:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm --filter @tau/bot build:*)",
+      "Bash(pnpm --filter @tau/web build:*)",
+      "Bash(pnpm --filter @tau/shared build:*)"
+    ]
+  }
+}
