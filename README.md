@@ -15,4 +15,4 @@ See `SETUP.md` for installation instructions.
 
 ## Architecture
 
-See `packages/bot/HUMAN_AI_ARCHITECTURE.md` for detailed system documentation.
+See `docs/HUMAN_AI_ARCHITECTURE.md` for detailed system documentation.
