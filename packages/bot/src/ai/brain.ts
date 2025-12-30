@@ -14,6 +14,7 @@ import { config } from '../config.js';
 import { decisionLogger, DecisionLogEntry } from './decision-logger.js';
 import { emotionManager } from './emotion-manager.js';
 import { experienceMemory } from './experience-memory.js';
+import { buildCraftableItemsContext, getSuggestedCraft } from '../games/crafting-helper.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -478,6 +479,22 @@ export class AIBrain {
       if (hasPickaxe) context.hasPickaxe = true;
       if (hasAxe) context.hasAxe = true;
       if (hasSword) context.hasSword = true;
+
+      // CRAFTING KNOWLEDGE - Tell the LLM what it CAN craft from current inventory
+      // Check if crafting table is nearby (from spatial observation)
+      const hasCraftingTableNearby = meta.spatialObservation?.semantic?.nearestFunctionalBlock?.type === 'crafting_table' ||
+        meta.inventory.some((i: any) => i.name === 'crafting_table');
+
+      const craftingContext = buildCraftableItemsContext(meta.inventory, hasCraftingTableNearby, 8);
+      if (craftingContext) {
+        context.crafting = craftingContext;
+      }
+
+      // Suggested next craft for progression
+      const suggestion = getSuggestedCraft(meta.inventory, hasCraftingTableNearby);
+      if (suggestion) {
+        context.suggestCraft = `${suggestion.suggestion} (${suggestion.reason})`;
+      }
     }
 
     // Blocks around (only non-air)

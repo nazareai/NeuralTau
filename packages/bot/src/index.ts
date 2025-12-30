@@ -4,9 +4,10 @@ import { elevenLabsClient } from './voice/elevenlabs.js';
 import { openRouterClient } from './ai/openrouter.js';
 import { gameManager } from './games/game-manager.js';
 import { minecraftGame } from './games/minecraft.js';
-import { config } from './config.js';
+import { config, streamingConfig } from './config.js';
 import { TauWebSocketServer } from './websocket-server.js';
 import { emotionManager } from './ai/emotion-manager.js';
+import { initializeStreaming, shutdownStreaming, TwitchClient, XClient, ChatManager, ChatResponder } from './streaming/index.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -68,6 +69,12 @@ class TauBot {
   private idleMessageInterval: NodeJS.Timeout | null = null;
   private lastIdleMessage: number = 0;
 
+  // Streaming integration (Twitch/X chat)
+  private twitchClient: TwitchClient | null = null;
+  private xClient: XClient | null = null;
+  private chatManager: ChatManager | null = null;
+  private chatResponder: ChatResponder | null = null;
+
   constructor() {
     logger.info('NeuralTau Bot initializing...', {
       personality: config.personality.name,
@@ -126,6 +133,31 @@ class TauBot {
           });
         }
       });
+
+      // Register death callback - RESET AI state on death
+      minecraftGame.onDeath(() => {
+        logger.warn('[DEATH] Bot died! Resetting AI brain state...');
+        aiBrain.resetHistory();
+        
+        // Generate frustrated streamer message
+        this.generateStreamerMessage({
+          event: 'failure',
+          details: 'I just died! Lost all my stuff. Starting over.',
+          emotion: 'frustration',
+        });
+      });
+
+      // Register respawn callback - fresh start message
+      minecraftGame.onRespawn(() => {
+        logger.info('[RESPAWN] Bot respawned - fresh start!');
+        
+        // Generate determined message about starting fresh
+        this.generateStreamerMessage({
+          event: 'milestone',
+          details: 'Respawned! Time to get back on the grind. Need wood, tools, everything.',
+          emotion: 'determination',
+        });
+      });
     }
 
     // Display initial game state
@@ -169,6 +201,27 @@ class TauBot {
     // Start idle message loop to keep stream engaging
     this.startIdleMessageLoop();
     logger.info('[STREAMER] Idle message loop started');
+
+    // Initialize streaming integrations (Twitch/X chat)
+    if (streamingConfig.enabled) {
+      try {
+        const streaming = await initializeStreaming(streamingConfig, this.wsServer);
+        this.twitchClient = streaming.twitchClient;
+        this.xClient = streaming.xClient;
+        this.chatManager = streaming.chatManager;
+        this.chatResponder = streaming.chatResponder;
+        
+        logger.info('📺 Streaming integrations initialized', {
+          twitch: !!this.twitchClient,
+          x: !!this.xClient,
+        });
+      } catch (error) {
+        logger.error('Failed to initialize streaming integrations', { error });
+        // Continue without streaming - not fatal
+      }
+    } else {
+      logger.info('Streaming integrations disabled (set CHAT_INTEGRATION_ENABLED=true to enable)');
+    }
   }
 
   /**
@@ -192,6 +245,11 @@ class TauBot {
     if (this.idleMessageInterval) {
       clearInterval(this.idleMessageInterval);
       this.idleMessageInterval = null;
+    }
+
+    // Shutdown streaming integrations
+    if (this.twitchClient || this.xClient) {
+      shutdownStreaming(this.twitchClient, this.xClient);
     }
 
     // Close WebSocket server
@@ -360,27 +418,37 @@ Respond with ONLY the voice line, nothing else.`;
     const now = Date.now();
     if (now - this.lastIdleMessage < 15000) return; // 15s minimum between idle messages
     
-    const idlePrompt = `You are NeuralTau, an AI streamer playing Minecraft. Generate a casual filler message for when nothing major is happening.
+    // Get actual time and weather from metadata
+    const meta = gameState.metadata || {};
+    const timeOfDay = meta.time || 'day';
+    const weather = meta.weather || 'clear';
+    
+    const idlePrompt = `You are NeuralTau, an AI streamer playing Minecraft. Generate a casual message for your viewers.
 
-CURRENT STATE:
-- Position: ${gameState.position || 'unknown'}
-- Health: ${gameState.health || 20}/20
-- Time: ${gameState.timeOfDay || 'day'}
-- Doing: Just playing, looking around
+CURRENT GAME STATE:
+- Time of day: ${timeOfDay} (use this! don't say sunny if it's night)
+- Weather: ${weather}
+- Health: ${meta.health || 20}/20
 
-MESSAGE TYPES (pick one randomly):
-1. Comment on the environment/vibes
-2. Talk to chat casually
-3. Think out loud about what to do next
-4. Make a random observation
-5. Ask chat a random question
+MESSAGE TYPES - pick ONE randomly, VARY it each time:
+1. Random life question - "yo chat, you ever think about..."
+2. React to time/weather - "damn it's getting dark" or "this rain is vibes"
+3. Talk about something NOT game related - music, food, random thought
+4. Ask chat opinion on random stuff - "what y'all eating right now?"
+5. Comment on stream/viewers - "appreciate y'all being here"
+6. Random observation about life
+7. Hype up the chat for no reason
 
-STYLE: Casual streamer energy, unfiltered, like between-action filler talk.
-Keep it SHORT (1 sentence, under 60 chars).
-You can swear naturally - "damn", "what the hell", "shit" etc.
-NO em dashes, only regular dashes.
+IMPORTANT:
+- Do NOT always talk about logs, mining, or game actions
+- Be random and unpredictable
+- Talk like a real streamer between gameplay moments
+- Keep it SHORT (under 50 chars)
+- You can swear naturally
+- NO em dashes, only regular dashes
+- If night/evening, don't say "sunny" or "beautiful day"
 
-${this.lastMessageText ? `PREVIOUS MESSAGE (don't repeat): "${this.lastMessageText}"` : ''}
+${this.lastMessageText ? `PREVIOUS (don't repeat similar): "${this.lastMessageText}"` : ''}
 
 Respond with ONLY the message.`;
 

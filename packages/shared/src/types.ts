@@ -149,7 +149,7 @@ export interface MinecraftState {
 
 export interface ChatMessage {
   id: string;
-  platform: 'twitch' | 'youtube' | 'discord';
+  platform: 'twitch' | 'youtube' | 'discord' | 'x';
   username: string;
   userId: string;
   message: string;

@@ -629,7 +629,7 @@ export default function Dashboard() {
             textShadow: '2px 2px 0 #15803D, 4px 4px 0 #000',
             letterSpacing: '2px',
           }}>
-            TAU
+            NEUTRALTAU
           </div>
 
           {/* Loading bar container */}
@@ -891,7 +891,7 @@ export default function Dashboard() {
               textShadow: '2px 2px 0 #000',
               letterSpacing: '2px',
             }}>
-              TAU
+              NEUTRALTAU
             </h1>
             <p style={{
               margin: 0,
@@ -903,69 +903,6 @@ export default function Dashboard() {
               AUTONOMOUS AI
             </p>
           </div>
-        </div>
-
-        {/* Test Timer */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {testTimer.active ? (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '8px 20px',
-              background: timerDisplay === '0:00'
-                ? 'linear-gradient(135deg, rgba(74, 222, 128, 0.3) 0%, rgba(34, 197, 94, 0.2) 100%)'
-                : 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%)',
-              border: `3px solid ${timerDisplay === '0:00' ? '#4ADE80' : '#FBBF24'}`,
-              borderRadius: '4px',
-              animation: timerDisplay === '0:00' ? 'glow 1s ease-in-out infinite' : 'none',
-            }}>
-              <span style={{
-                fontSize: '14px',
-                fontFamily: '"Press Start 2P", monospace',
-                color: timerDisplay === '0:00' ? '#4ADE80' : '#FBBF24',
-                textShadow: '1px 1px 0 #000',
-              }}>
-                {timerDisplay === '0:00' ? 'DONE!' : timerDisplay}
-              </span>
-              <button
-                onClick={stopTestTimer}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.8)',
-                  border: '2px solid #EF4444',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '8px',
-                  fontFamily: '"Press Start 2P", monospace',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  textShadow: '1px 1px 0 #000',
-                }}
-              >
-                STOP
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={startTestTimer}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(37, 99, 235, 0.2) 100%)',
-                border: '3px solid #3B82F6',
-                borderRadius: '4px',
-                fontSize: '10px',
-                fontFamily: '"Press Start 2P", monospace',
-                color: '#3B82F6',
-                cursor: 'pointer',
-                textShadow: '1px 1px 0 #000',
-              }}
-            >
-              5MIN TEST
-            </button>
-          )}
         </div>
 
         {/* Status indicator */}

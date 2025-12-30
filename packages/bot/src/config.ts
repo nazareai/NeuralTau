@@ -1,10 +1,21 @@
 import dotenv from 'dotenv';
 import { Config, ConfigSchema } from '@tau/shared';
 import { Logger } from '@tau/shared';
+import type { StreamingConfig } from './streaming/index.js';
 
 dotenv.config();
 
 const logger = new Logger('Config');
+
+/**
+ * Extended streaming configuration with Twitch/X integration
+ */
+export interface ExtendedStreamingConfig extends StreamingConfig {
+  chatEnabled: boolean;
+  subscribersAndDonationsOnly: boolean;  // Only respond to subs/bits/donations
+  maxResponsesPerMinute: number;
+  autoRespondThreshold: number;
+}
 
 export function loadConfig(): Config {
   try {
@@ -80,4 +91,42 @@ export function loadConfig(): Config {
   }
 }
 
+/**
+ * Load streaming/chat integration configuration
+ */
+export function loadStreamingConfig(): ExtendedStreamingConfig {
+  const chatEnabled = process.env.CHAT_INTEGRATION_ENABLED === 'true';
+  // Default TRUE - only respond to subscribers and donations (cost control)
+  const subsOnly = process.env.CHAT_SUBS_AND_DONATIONS_ONLY !== 'false';
+
+  return {
+    enabled: chatEnabled,
+    chatEnabled,
+    subscribersAndDonationsOnly: subsOnly,
+    maxResponsesPerMinute: parseInt(process.env.CHAT_MAX_RESPONSES_PER_MIN || '6'),
+    autoRespondThreshold: parseInt(process.env.CHAT_AUTO_RESPOND_THRESHOLD || '60'),
+
+    // Twitch configuration
+    twitch: process.env.TWITCH_ACCESS_TOKEN ? {
+      accessToken: process.env.TWITCH_ACCESS_TOKEN,
+      refreshToken: process.env.TWITCH_REFRESH_TOKEN,
+      clientId: process.env.TWITCH_CLIENT_ID || '',
+      clientSecret: process.env.TWITCH_CLIENT_SECRET,
+      channelName: process.env.TWITCH_CHANNEL_NAME || 'neuraltau',
+      botUsername: process.env.TWITCH_BOT_USERNAME || 'NeuralTau',
+    } : undefined,
+
+    // X/Twitter configuration  
+    x: process.env.X_BEARER_TOKEN ? {
+      bearerToken: process.env.X_BEARER_TOKEN,
+      apiKey: process.env.X_API_KEY,
+      apiSecret: process.env.X_API_SECRET,
+      accessToken: process.env.X_ACCESS_TOKEN,
+      accessSecret: process.env.X_ACCESS_SECRET,
+      botUsername: process.env.X_BOT_USERNAME || 'NeuralTau',
+    } : undefined,
+  };
+}
+
 export const config = loadConfig();
+export const streamingConfig = loadStreamingConfig();

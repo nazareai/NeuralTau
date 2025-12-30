@@ -91,6 +91,12 @@ If you've tried mining stone 2+ times and been told "need pickaxe":
 5. Find iron → smelt → iron tools
 6. Mine diamond
 
+# CRAFTING HELP
+Context includes "crafting" showing what you CAN CRAFT now.
+- Check "suggestCraft" for the recommended next craft
+- Items with * need crafting_table placed nearby
+- "ALMOST" shows items you're close to being able to craft
+
 # RESPONSE FORMAT
 Keep reasoning BRIEF (1-2 sentences max), then respond with JSON:
 

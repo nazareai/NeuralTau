@@ -129,6 +129,10 @@ export class MinecraftGame {
 
   // Callback for item pickups (for UI notifications)
   private onItemPickupCallback: ((itemName: string, displayName: string, count: number) => void) | null = null;
+  
+  // Callbacks for death/respawn (to reset AI state)
+  private onDeathCallback: (() => void) | null = null;
+  private onRespawnCallback: (() => void) | null = null;
 
   // Action lock to prevent concurrent mining/movement operations
   private actionInProgress: string | null = null;
@@ -515,11 +519,21 @@ export class MinecraftGame {
         distanceTraveled: Math.floor(this.sessionStats.distanceTraveled),
       });
       this.bot?.chat('I died! Respawning...');
+      
+      // Trigger death callback if registered
+      if (this.onDeathCallback) {
+        this.onDeathCallback();
+      }
     });
 
     this.bot.on('respawn', () => {
-      logger.info('[SESSION-STATS] Bot respawned');
-      this.bot?.chat("I'm back! What should I do?");
+      logger.info('[SESSION-STATS] Bot respawned - fresh start!');
+      this.bot?.chat("I'm back! Starting fresh.");
+      
+      // Trigger respawn callback if registered
+      if (this.onRespawnCallback) {
+        this.onRespawnCallback();
+      }
     });
 
     this.bot.on('kicked', (reason) => {
@@ -5502,6 +5516,20 @@ ${aiAnalysis}
    */
   onItemPickup(callback: (itemName: string, displayName: string, count: number) => void): void {
     this.onItemPickupCallback = callback;
+  }
+
+  /**
+   * Register a callback for when the bot dies
+   */
+  onDeath(callback: () => void): void {
+    this.onDeathCallback = callback;
+  }
+
+  /**
+   * Register a callback for when the bot respawns
+   */
+  onRespawn(callback: () => void): void {
+    this.onRespawnCallback = callback;
   }
 
   /**
