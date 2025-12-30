@@ -1,0 +1,155 @@
+{
+  "lastUpdated": "2025-12-30T08:40:17.746Z",
+  "totalEntries": 3,
+  "entries": [
+    {
+      "timestamp": "2025-12-30T08:38:31.196Z",
+      "context": {
+        "position": {
+          "x": -20,
+          "y": 65,
+          "z": -97
+        },
+        "health": 9.333333969116211,
+        "food": 16,
+        "inventory": [
+          "oak_planks",
+          "oak_log",
+          "stick",
+          "crafting_table",
+          "wheat_seeds",
+          "diamond_axe",
+          "birch_log",
+          "dirt",
+          "birch_sapling"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "Night+low HP: craft planks from logs for urgent shelter."
+      },
+      "result": {
+        "success": true,
+        "message": "Crafted oak_planks (now have 5)"
+      }
+    },
+    {
+      "timestamp": "2025-12-30T08:39:54.908Z",
+      "context": {
+        "position": {
+          "x": -20,
+          "y": 65,
+          "z": -97
+        },
+        "health": 9.333333969116211,
+        "food": 16,
+        "inventory": [
+          "oak_planks",
+          "oak_log",
+          "stick",
+          "crafting_table",
+          "wheat_seeds",
+          "diamond_axe",
+          "birch_log",
+          "dirt",
+          "birch_sapling"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [
+          "bee"
+        ],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "Low HP, seek animals north to hunt food (74% success)."
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach north - moved 2.3 blocks, 7.8 remaining"
+      }
+    },
+    {
+      "timestamp": "2025-12-30T08:40:11.826Z",
+      "context": {
+        "position": {
+          "x": -27,
+          "y": 65,
+          "z": -96
+        },
+        "health": 9.333333969116211,
+        "food": 16,
+        "inventory": [
+          "oak_planks",
+          "oak_log",
+          "stick",
+          "crafting_table",
+          "wheat_seeds",
+          "diamond_axe",
+          "birch_log",
+          "dirt",
+          "birch_sapling"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "LOW_HP: move east to 9m tree for wood/shelter safety."
+      },
+      "result": {
+        "success": true,
+        "message": "Reached east using pathfinder (1.8 blocks away)"
+      }
+    }
+  ]
+}

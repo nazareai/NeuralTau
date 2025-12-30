@@ -10,6 +10,7 @@ export const ConfigSchema = z.object({
     provider: z.literal('openrouter'),
     defaultModel: z.string().default('anthropic/claude-sonnet-4.5'),
     visionModel: z.string().default('anthropic/claude-sonnet-4.5'),
+    chatModel: z.string().default('x-ai/grok-4.1-fast:nitro'),
     apiKey: z.string(),
     maxTokens: z.number().default(4096),
     temperature: z.number().min(0).max(2).default(0.8),
@@ -22,6 +23,7 @@ export const ConfigSchema = z.object({
     voiceId: z.string().optional(),
     stability: z.number().min(0).max(1).default(0.5),
     similarityBoost: z.number().min(0).max(1).default(0.75),
+    streamerVoiceEnabled: z.boolean().default(false),
   }),
 
   // Blockchain Configuration

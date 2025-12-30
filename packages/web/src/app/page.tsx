@@ -58,8 +58,71 @@ export default function Dashboard() {
   const [heldItem, setHeldItem] = useState<{ name: string | null; displayName: string | null; action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' }>({ name: null, displayName: null, action: 'idle' });
   const [viewerPort, setViewerPort] = useState(3007);
   const [itemPickups, setItemPickups] = useState<{ id: number; itemName: string; displayName: string; count: number }[]>([]);
+  const [streamerMessages, setStreamerMessages] = useState<{ id: number; text: string; type: string; timestamp: Date }[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const pickupIdRef = useRef(0);
+  const messageIdRef = useRef(0);
   const wsRef = useRef<WebSocket | null>(null);
+  const audioQueueRef = useRef<string[]>([]);
+  const isPlayingRef = useRef(false);
+
+  // Audio playback function
+  const playNextAudio = () => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+    
+    const audioData = audioQueueRef.current.shift();
+    if (!audioData) return;
+    
+    isPlayingRef.current = true;
+    
+    try {
+      const binaryString = atob(audioData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.volume = 0.8;
+      
+      audio.play()
+        .then(() => {
+          console.log('[AUDIO] Playing streamer voice');
+          setAudioEnabled(true);
+        })
+        .catch(e => {
+          console.warn('[AUDIO] Autoplay blocked - click Enable Audio button:', e.message);
+          isPlayingRef.current = false;
+          // Re-queue the audio for later
+          audioQueueRef.current.unshift(audioData);
+        });
+      
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        console.log('[AUDIO] Playback finished');
+        isPlayingRef.current = false;
+        playNextAudio(); // Play next in queue
+      };
+      
+      audio.onerror = () => {
+        console.error('[AUDIO] Audio error');
+        isPlayingRef.current = false;
+        playNextAudio();
+      };
+    } catch (e) {
+      console.error('[AUDIO] Failed to play audio:', e);
+      isPlayingRef.current = false;
+    }
+  };
+
+  // Enable audio on user interaction
+  const enableAudio = () => {
+    const audio = new Audio();
+    audio.play().catch(() => {});
+    setAudioEnabled(true);
+    playNextAudio();
+  };
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:3002');
@@ -133,6 +196,29 @@ export default function Dashboard() {
           setTimeout(() => {
             setItemPickups(prev => prev.filter(p => p.id !== newPickup.id));
           }, 2000);
+          break;
+
+        case 'streamerMessage':
+          const newMessage = {
+            id: messageIdRef.current++,
+            text: message.data.text,
+            type: message.data.type,
+            timestamp: new Date(message.timestamp),
+          };
+          setStreamerMessages(prev => [newMessage, ...prev].slice(0, 20)); // Keep last 20
+          break;
+
+        case 'audio':
+          // Play audio from base64
+          console.log('[AUDIO] Received audio data, length:', message.data.audio?.length);
+          const audioData = message.data.audio;
+          if (!audioData) {
+            console.error('[AUDIO] No audio data received');
+            break;
+          }
+          // Queue audio for playback
+          audioQueueRef.current.push(audioData);
+          playNextAudio();
           break;
       }
     };
@@ -1614,6 +1700,141 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+
+          {/* Streamer Chat - NeuralTau's messages to viewers */}
+          <div style={{
+            flexShrink: 0,
+            maxHeight: '280px',
+            position: 'relative',
+            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
+            borderRadius: '4px',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'repeating-linear-gradient(90deg, #EC4899 0px, #EC4899 8px, transparent 8px, transparent 16px)',
+            }} />
+            <div style={{
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+                flexShrink: 0,
+              }}>
+                <h3 style={{
+                  margin: 0,
+                  fontSize: '10px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#EC4899',
+                  textShadow: '1px 1px 0 #000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <span style={{ fontSize: '16px' }}>💬</span>
+                  NEURALTAU
+                </h3>
+                <button
+                  onClick={enableAudio}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '8px',
+                    fontFamily: '"Press Start 2P", monospace',
+                    background: audioEnabled ? 'rgba(74, 222, 128, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+                    border: `2px solid ${audioEnabled ? '#4ADE80' : '#EF4444'}`,
+                    borderRadius: '4px',
+                    color: audioEnabled ? '#4ADE80' : '#EF4444',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  {audioEnabled ? '🔊' : '🔇'} {audioEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}>
+                {streamerMessages.length === 0 ? (
+                  <div style={{
+                    padding: '20px',
+                    textAlign: 'center',
+                    color: '#6B7280',
+                    fontSize: '10px',
+                    fontFamily: '"Press Start 2P", monospace',
+                  }}>
+                    Waiting for stream...
+                  </div>
+                ) : (
+                  streamerMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      style={{
+                        padding: '10px 12px',
+                        background: msg.type === 'excitement' 
+                          ? 'rgba(74, 222, 128, 0.15)'
+                          : msg.type === 'frustration'
+                            ? 'rgba(239, 68, 68, 0.15)'
+                            : msg.type === 'question'
+                              ? 'rgba(251, 191, 36, 0.15)'
+                              : 'rgba(236, 72, 153, 0.1)',
+                        border: '2px solid',
+                        borderColor: msg.type === 'excitement'
+                          ? '#4ADE8044'
+                          : msg.type === 'frustration'
+                            ? '#EF444444'
+                            : msg.type === 'question'
+                              ? '#FBBF2444'
+                              : '#EC489944',
+                        borderRadius: '4px',
+                        borderLeft: '4px solid',
+                        borderLeftColor: msg.type === 'excitement'
+                          ? '#4ADE80'
+                          : msg.type === 'frustration'
+                            ? '#EF4444'
+                            : msg.type === 'question'
+                              ? '#FBBF24'
+                              : '#EC4899',
+                      }}
+                    >
+                      <p style={{
+                        margin: 0,
+                        fontSize: '12px',
+                        lineHeight: 1.5,
+                        color: '#E5E7EB',
+                      }}>
+                        {msg.text}
+                      </p>
+                      <span style={{
+                        fontSize: '8px',
+                        color: '#6B7280',
+                        marginTop: '4px',
+                        display: 'block',
+                      }}>
+                        {msg.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Activity Log - Takes remaining space and scrolls */}
           <div style={{

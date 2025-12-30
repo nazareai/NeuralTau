@@ -1,6 +1,6 @@
 {
   "serverKey": "localhost_25565",
-  "lastUpdated": "2025-12-29T19:24:54.221Z",
+  "lastUpdated": "2025-12-29T21:20:45.183Z",
   "placedBlocks": [
     {
       "type": "crafting_table",
@@ -19,6 +19,15 @@
         "z": -75
       },
       "placedAt": "2025-12-29T19:24:24.218Z"
+    },
+    {
+      "type": "crafting_table",
+      "position": {
+        "x": -28,
+        "y": 70,
+        "z": -70
+      },
+      "placedAt": "2025-12-29T21:20:15.183Z"
     }
   ]
 }

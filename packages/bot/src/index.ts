@@ -1,6 +1,7 @@
 import { Logger, delay, TIMING } from '@tau/shared';
 import { aiBrain } from './ai/brain.js';
 import { elevenLabsClient } from './voice/elevenlabs.js';
+import { openRouterClient } from './ai/openrouter.js';
 import { gameManager } from './games/game-manager.js';
 import { minecraftGame } from './games/minecraft.js';
 import { config } from './config.js';
@@ -59,6 +60,14 @@ class TauBot {
     place: 2,     // Place up to 2 blocks
   };
 
+  // Streamer message tracking
+  private lastStreamerMessage: number = 0;
+  private streamerMessageCooldown: number = 12000; // 12 seconds between messages
+  private messagesSinceLastQuestion: number = 0;
+  private lastMessageText: string = '';
+  private idleMessageInterval: NodeJS.Timeout | null = null;
+  private lastIdleMessage: number = 0;
+
   constructor() {
     logger.info('NeuralTau Bot initializing...', {
       personality: config.personality.name,
@@ -106,6 +115,16 @@ class TauBot {
           displayName,
           count,
         });
+        
+        // Generate streamer message for exciting pickups
+        const excitingItems = ['diamond', 'emerald', 'gold', 'iron_ingot', 'netherite'];
+        if (excitingItems.some(e => itemName.includes(e)) || count >= 5) {
+          this.generateStreamerMessage({
+            event: 'pickup',
+            details: `Just picked up ${count}x ${displayName}!`,
+            emotion: 'excitement',
+          });
+        }
       });
     }
 
@@ -137,6 +156,19 @@ class TauBot {
     }
 
     logger.info('✅ NeuralTau Bot is now running!');
+
+    // Send greeting to viewers
+    setTimeout(() => {
+      this.generateStreamerMessage({
+        event: 'milestone',
+        details: 'Just connected to the Minecraft server! Starting a new session.',
+        emotion: 'excitement',
+      });
+    }, 3000); // Small delay to let everything settle
+
+    // Start idle message loop to keep stream engaging
+    this.startIdleMessageLoop();
+    logger.info('[STREAMER] Idle message loop started');
   }
 
   /**
@@ -157,13 +189,228 @@ class TauBot {
       this.decisionLoopInterval = null;
     }
 
+    if (this.idleMessageInterval) {
+      clearInterval(this.idleMessageInterval);
+      this.idleMessageInterval = null;
+    }
+
     // Close WebSocket server
     this.wsServer.close();
 
     // Shutdown game
     await gameManager.shutdown();
+  }
 
-    logger.info('✅ NeuralTau Bot stopped');
+  /**
+   * Generate an AI-powered streamer message
+   * Uses the chat model to create engaging, dynamic messages
+   */
+  private async generateStreamerMessage(context: {
+    event: 'decision' | 'success' | 'failure' | 'pickup' | 'danger' | 'milestone' | 'idle';
+    details: string;
+    emotion?: string;
+    askQuestion?: boolean;
+  }): Promise<void> {
+    // Check cooldown
+    const now = Date.now();
+    if (now - this.lastStreamerMessage < this.streamerMessageCooldown) {
+      return;
+    }
+
+    // Periodically ask viewers for advice
+    this.messagesSinceLastQuestion++;
+    const shouldAskQuestion = context.askQuestion || this.messagesSinceLastQuestion >= 8;
+    if (shouldAskQuestion) {
+      this.messagesSinceLastQuestion = 0;
+    }
+
+    const prompt = `You are NeuralTau, an AI streamer playing Minecraft live. Generate a SHORT, engaging message (1-2 sentences max) for your viewers.
+
+PERSONALITY: Energetic like Speed/xQc, genuine reactions, sometimes asks chat for advice, celebrates wins, gets frustrated at failures but stays entertaining.
+
+CURRENT EVENT: ${context.event}
+DETAILS: ${context.details}
+${context.emotion ? `FEELING: ${context.emotion}` : ''}
+${shouldAskQuestion ? 'ASK VIEWERS: Include a question asking for their opinion or advice!' : ''}
+${this.lastMessageText ? `PREVIOUS MESSAGE (DO NOT repeat similar phrasing): "${this.lastMessageText}"` : ''}
+
+CRITICAL RULES:
+- Be concise and punchy (under 100 characters ideal)
+- VARY your sentence openers - NEVER repeat the same opener twice in a row
+- DO NOT start with "Boom" or similar catchphrases repeatedly
+- Use diverse expressions: "Yo", "Okay so", "Wait", "Alright", "Dude", "Oh", "Finally", "Nah", etc.
+- Sound natural, like a real streamer with personality
+- React genuinely to what happened
+- NO emojis in the text
+- NO em dashes (—), only use regular dashes (-) if needed
+- If asking a question, make it specific to the situation
+
+Respond with ONLY the message, nothing else.`;
+
+    try {
+      const response = await openRouterClient.chat([
+        { role: 'user', content: prompt }
+      ], { model: config.ai.chatModel, maxTokens: 100 });
+
+      if (response?.content) {
+        const messageText = response.content.trim().replace(/—/g, '-'); // Replace em dashes
+        this.wsServer.broadcastStreamerMessage({
+          text: messageText,
+          type: this.getMessageType(context.event),
+          context: context.details,
+        });
+        this.lastStreamerMessage = now;
+        this.lastMessageText = messageText;
+
+        // Generate voice if enabled - use a MORE ENERGETIC version
+        if (config.voice.streamerVoiceEnabled && elevenLabsClient.isConfigured()) {
+          this.generateVoiceReaction(context.event, context.details, messageText);
+        }
+      }
+    } catch (error) {
+      logger.debug('Failed to generate streamer message', { error });
+    }
+  }
+
+  private getMessageType(event: string): 'thought' | 'reaction' | 'question' | 'excitement' | 'frustration' | 'greeting' {
+    switch (event) {
+      case 'success':
+      case 'milestone':
+      case 'pickup':
+        return 'excitement';
+      case 'failure':
+      case 'danger':
+        return 'frustration';
+      case 'decision':
+        return 'thought';
+      default:
+        return 'reaction';
+    }
+  }
+
+  /**
+   * Generate an energetic voice reaction - MORE hype than the chat text
+   * Think Speed, Kai Cenat - raw energy and personality
+   */
+  private async generateVoiceReaction(event: string, details: string, chatMessage: string): Promise<void> {
+    const voicePrompt = `You are NeuralTau, an AI streamer with INSANE energy like Speed or Kai Cenat.
+
+Generate a SHORT voice reaction (spoken out loud) for what just happened. This is DIFFERENT from chat - this is you TALKING with personality.
+
+WHAT HAPPENED: ${event} - ${details}
+CHAT MESSAGE (for context, don't just read this): ${chatMessage}
+
+VOICE STYLE:
+- Raw energy, genuine reactions, UNFILTERED
+- Use filler words naturally: "yo", "bro", "like", "nah", "wait", "ayo"
+- React emotionally - hype for wins, frustrated for fails
+- You CAN swear when it fits - "damn", "what the hell", "holy shit" etc
+- Keep it SHORT (under 15 words ideal)
+- Sound like you're actually playing and talking
+
+Examples of good voice:
+- "YO LET'S GOOO we got it!"
+- "Bro what the hell? Nah nah that's crazy"
+- "Okay okay I see you chat, I see you"
+- "Wait hold up... AYO WHAT THE-"
+- "Damn that actually worked!"
+
+Respond with ONLY the voice line, nothing else.`;
+
+    try {
+      const response = await openRouterClient.chat([
+        { role: 'user', content: voicePrompt }
+      ], { model: config.ai.chatModel, maxTokens: 50 });
+
+      if (response?.content) {
+        const voiceText = response.content.trim().replace(/"/g, '');
+        const audioBuffer = await elevenLabsClient.textToSpeech(voiceText);
+        const audioBase64 = audioBuffer.toString('base64');
+        this.wsServer.broadcastAudio(audioBase64);
+        logger.info('[VOICE] Streamer voice broadcast', { text: voiceText.substring(0, 50) });
+      }
+    } catch (error) {
+      logger.debug('[VOICE] Failed to generate voice reaction', { error });
+    }
+  }
+
+  /**
+   * Start the idle message loop - keeps the stream alive with chatter
+   */
+  private startIdleMessageLoop(): void {
+    // Generate idle messages every 20-40 seconds when nothing is happening
+    this.idleMessageInterval = setInterval(async () => {
+      const now = Date.now();
+      const timeSinceLastMessage = now - this.lastStreamerMessage;
+      
+      // Only generate if no message in last 20 seconds
+      if (timeSinceLastMessage < 20000) return;
+      
+      // Get current game state for context
+      const gameState = await gameManager.getState();
+      
+      await this.generateIdleMessage(gameState);
+    }, 25000); // Check every 25 seconds
+  }
+
+  /**
+   * Generate random idle/filler messages to keep stream engaging
+   */
+  private async generateIdleMessage(gameState: any): Promise<void> {
+    const now = Date.now();
+    if (now - this.lastIdleMessage < 15000) return; // 15s minimum between idle messages
+    
+    const idlePrompt = `You are NeuralTau, an AI streamer playing Minecraft. Generate a casual filler message for when nothing major is happening.
+
+CURRENT STATE:
+- Position: ${gameState.position || 'unknown'}
+- Health: ${gameState.health || 20}/20
+- Time: ${gameState.timeOfDay || 'day'}
+- Doing: Just playing, looking around
+
+MESSAGE TYPES (pick one randomly):
+1. Comment on the environment/vibes
+2. Talk to chat casually
+3. Think out loud about what to do next
+4. Make a random observation
+5. Ask chat a random question
+
+STYLE: Casual streamer energy, unfiltered, like between-action filler talk.
+Keep it SHORT (1 sentence, under 60 chars).
+You can swear naturally - "damn", "what the hell", "shit" etc.
+NO em dashes, only regular dashes.
+
+${this.lastMessageText ? `PREVIOUS MESSAGE (don't repeat): "${this.lastMessageText}"` : ''}
+
+Respond with ONLY the message.`;
+
+    try {
+      const response = await openRouterClient.chat([
+        { role: 'user', content: idlePrompt }
+      ], { model: config.ai.chatModel, maxTokens: 60 });
+
+      if (response?.content) {
+        const messageText = response.content.trim().replace(/—/g, '-').replace(/"/g, '');
+        
+        this.lastStreamerMessage = now;
+        this.lastIdleMessage = now;
+        this.lastMessageText = messageText;
+        
+        // Idle messages are VOICE ONLY - no chat text
+        if (config.voice.streamerVoiceEnabled && elevenLabsClient.isConfigured()) {
+          try {
+            const audioBuffer = await elevenLabsClient.textToSpeech(messageText);
+            const audioBase64 = audioBuffer.toString('base64');
+            this.wsServer.broadcastAudio(audioBase64);
+            logger.info('[VOICE] Idle voice broadcast', { text: messageText.substring(0, 50) });
+          } catch (voiceError) {
+            logger.debug('[VOICE] Idle voice failed', { error: voiceError });
+          }
+        }
+      }
+    } catch (error) {
+      logger.debug('[STREAMER] Failed to generate idle message', { error });
+    }
   }
 
   /**
@@ -516,6 +763,24 @@ class TauBot {
       // Log emotional expression if there is one
       if (emotionalState.expression && emotionalState.dominantIntensity > 40) {
         logger.info(`[EMOTION] ${emotionalState.dominant.toUpperCase()}: "${emotionalState.expression}"`);
+      }
+
+      // Generate AI streamer message based on what happened
+      const wasSuccessful = !result.toLowerCase().includes('failed') && 
+                            !result.toLowerCase().includes("couldn't") &&
+                            !result.toLowerCase().includes('cannot');
+      const isDanger = emotionalState.dominant === 'fear' || 
+                      meta?.health < 8 ||
+                      meta?.nearbyEntities?.some((e: string) => ['zombie', 'skeleton', 'creeper', 'spider'].includes(e.toLowerCase()));
+      
+      // Generate message for significant events (not every action)
+      if (emotionalState.dominantIntensity > 50 || isDanger || (!wasSuccessful && consecutiveFailures >= 2)) {
+        this.generateStreamerMessage({
+          event: isDanger ? 'danger' : wasSuccessful ? 'success' : 'failure',
+          details: `${action.type} ${action.target || ''}: ${result.substring(0, 80)}`,
+          emotion: emotionalState.dominant,
+          askQuestion: consecutiveFailures >= 3, // Ask chat for help when stuck
+        });
       }
 
       // Check for consecutive failures and force recovery

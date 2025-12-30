@@ -5,7 +5,7 @@ import type { GameState, GameAction, Decision, EmotionalState } from '@tau/share
 const logger = new Logger('WebSocket');
 
 export interface BroadcastEvent {
-  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup';
+  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup' | 'streamerMessage';
   timestamp: Date;
   data: any;
 }
@@ -184,6 +184,34 @@ export class TauWebSocketServer {
       type: 'itemPickup',
       timestamp: new Date(),
       data: pickup,
+    });
+  }
+
+  /**
+   * Broadcast streamer message for the chat panel
+   * These are engaging messages from NeuralTau to viewers
+   */
+  broadcastStreamerMessage(message: {
+    text: string;
+    type: 'thought' | 'reaction' | 'question' | 'excitement' | 'frustration' | 'greeting';
+    context?: string;
+  }) {
+    this.broadcast({
+      type: 'streamerMessage',
+      timestamp: new Date(),
+      data: message,
+    });
+  }
+
+  /**
+   * Broadcast audio data for voice playback
+   * Sends base64-encoded audio to frontend for playback
+   */
+  broadcastAudio(audioBase64: string) {
+    this.broadcast({
+      type: 'audio',
+      timestamp: new Date(),
+      data: { audio: audioBase64 },
     });
   }
 

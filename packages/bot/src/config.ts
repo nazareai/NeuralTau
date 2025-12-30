@@ -13,6 +13,7 @@ export function loadConfig(): Config {
         provider: 'openrouter',
         defaultModel: process.env.AI_DEFAULT_MODEL || 'anthropic/claude-sonnet-4.5',
         visionModel: process.env.AI_VISION_MODEL || 'anthropic/claude-sonnet-4.5',
+        chatModel: process.env.AI_CHAT_MODEL || process.env.AI_DEFAULT_MODEL || 'x-ai/grok-4.1-fast:nitro',
         apiKey: process.env.OPENROUTER_API_KEY,
         maxTokens: process.env.AI_MAX_TOKENS
           ? parseInt(process.env.AI_MAX_TOKENS)
@@ -31,6 +32,7 @@ export function loadConfig(): Config {
         similarityBoost: process.env.VOICE_SIMILARITY_BOOST
           ? parseFloat(process.env.VOICE_SIMILARITY_BOOST)
           : 0.75,
+        streamerVoiceEnabled: process.env.STREAMER_VOICE_ENABLED === 'true',
       },
       blockchain: {
         chain: 'base',
