@@ -7,7 +7,9 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "clear-memory": "bash scripts/clear-memory.sh",
+    "clear-all": "bash scripts/clear-all.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",

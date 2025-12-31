@@ -162,13 +162,21 @@ export class AIBrain {
     // COMPREHENSIVE failure keywords - must catch all failure cases!
     const failureKeywords = [
       'failed', 'cannot', 'blocked', 'stuck', 'error', 'could not', "couldn't", 
-      "didn't work", 'unable', 'timeout', 'no recipe', 'missing', 'not found',
-      'unknown item', 'unknown', 'invalid', 'no path', 'requires'
+      "didn't work", 'unable', 'timeout', 'timed out', 'no recipe', 'missing', 'not found',
+      'unknown item', 'unknown', 'invalid', 'no path', 'requires',
+      "don't have", "do not have", "in inventory", "not in inventory", "no item"
     ];
 
     // Determine success - mining without proper tool should count as failure
     let success: boolean;
     const resultLower = result.toLowerCase();
+    
+    // CRITICAL: Check for inventory failures first (e.g., "Don't have oak_planks in inventory")
+    if (resultLower.includes("don't have") || resultLower.includes("not in inventory") || 
+        (resultLower.includes("in inventory") && !resultLower.includes("have"))) {
+      success = false;
+      logger.warn('[LEARNING] Detected inventory failure', { action: action.type, target: action.target, result });
+    } else
 
     if (action.type === 'mine') {
       // Mining is only successful if block was broken AND item was collected
@@ -187,6 +195,14 @@ export class AIBrain {
         success = true;  // "Crafted wooden_pickaxe" etc.
       } else {
         // All other craft results are failures: no recipe, unknown item, missing materials, etc.
+        success = false;
+      }
+    } else if (action.type === 'place') {
+      // Place is ONLY successful if block was actually placed
+      if (resultLower.includes('placed') && !resultLower.includes("don't have") && !resultLower.includes('cannot')) {
+        success = true;
+      } else {
+        // All other place results are failures: don't have item, can't place here, etc.
         success = false;
       }
     } else if (action.type === 'move') {
@@ -268,7 +284,7 @@ export class AIBrain {
   /**
    * Detect if bot is repeating same failed action
    */
-  public isRepeatingFailedAction(): { isRepeating: boolean; actionType?: string; count?: number } {
+  public isRepeatingFailedAction(): { isRepeating: boolean; actionType?: string; target?: string; count?: number } {
     if (this.actionHistory.length < 3) {
       return { isRepeating: false };
     }
@@ -276,16 +292,56 @@ export class AIBrain {
     const lastThree = this.actionHistory.slice(-3);
     const allFailed = lastThree.every(h => !h.success);
     const sameType = lastThree.every(h => h.action.type === lastThree[0].action.type);
+    const sameTarget = lastThree.every(h => h.action.target === lastThree[0].action.target);
 
     if (allFailed && sameType) {
       return {
         isRepeating: true,
         actionType: lastThree[0].action.type,
+        target: sameTarget ? lastThree[0].action.target : undefined,
         count: 3
       };
     }
 
     return { isRepeating: false };
+  }
+
+  /**
+   * Detect severe stuck loop - same action+target failing repeatedly
+   * Returns a strong warning message for the AI if stuck
+   */
+  public getStuckLoopWarning(): string | null {
+    if (this.actionHistory.length < 3) return null;
+
+    const lastFive = this.actionHistory.slice(-5);
+    const failedActions = lastFive.filter(h => !h.success);
+    
+    if (failedActions.length < 3) return null;
+
+    // Check for same action+target pattern
+    const actionSignatures = failedActions.map(h => `${h.action.type}:${h.action.target || 'none'}`);
+    const signatureCounts: Record<string, number> = {};
+    
+    for (const sig of actionSignatures) {
+      signatureCounts[sig] = (signatureCounts[sig] || 0) + 1;
+    }
+
+    // Find the most repeated failed action
+    const entries = Object.entries(signatureCounts);
+    const [mostRepeated, count] = entries.sort((a, b) => b[1] - a[1])[0];
+    
+    if (count >= 3) {
+      const [actionType, target] = mostRepeated.split(':');
+      logger.warn('[STUCK-LOOP] 🚨 CRITICAL: Same action failing repeatedly!', {
+        action: actionType,
+        target: target,
+        failCount: count
+      });
+      
+      return `🚨🚨🚨 CRITICAL STUCK LOOP: You tried "${actionType} ${target}" ${count} times and it FAILED every time! STOP doing this action! Do something COMPLETELY DIFFERENT like: mine trees for wood, move to a new location, craft different items, or eat food. The current approach is NOT WORKING.`;
+    }
+
+    return null;
   }
 
   /**
@@ -452,7 +508,21 @@ export class AIBrain {
     const alerts: string[] = [];
     if (hp < 10) alerts.push('LOW_HP');
     if (food < 6) alerts.push('HUNGRY');
-    if (time === 'night' || time === 'evening') alerts.push('DARK');
+    
+    // Night mode - check if has shelter materials
+    if (time === 'night' || time === 'evening') {
+      const hasSword = meta.inventory?.some((i: any) => i.name.includes('sword'));
+      const hasBlocks = meta.inventory?.some((i: any) => 
+        ['dirt', 'cobblestone', 'stone', 'planks'].some(b => i.name.includes(b))
+      );
+      if (hasSword) {
+        alerts.push('NIGHT_SAFE'); // Has weapon, can fight
+      } else if (hasBlocks) {
+        alerts.push('NIGHT_BUILD_SHELTER'); // Build shelter with blocks
+      } else {
+        alerts.push('NIGHT_DIG_SHELTER'); // Dig into ground for safety
+      }
+    }
 
     // Check for hostile mobs
     const hostileMobs = ['zombie', 'skeleton', 'creeper', 'spider', 'enderman', 'witch', 'pillager'];
@@ -460,6 +530,49 @@ export class AIBrain {
       hostileMobs.some(h => e.toLowerCase().includes(h))
     );
     if (nearbyHostile) alerts.push(`HOSTILE:${nearbyHostile}`);
+
+    // === HEALTH DANGER ALERTS (from real-time health monitoring) ===
+    const healthAlert = meta.healthAlert;
+    if (healthAlert) {
+      // Under attack - taking damage right now!
+      if (healthAlert.isUnderAttack) {
+        alerts.push(`UNDER_ATTACK:${healthAlert.attacker || 'unknown'}`);
+      }
+      
+      // Recent damage in last 5 seconds
+      if (healthAlert.recentDamage >= 3) {
+        alerts.push(`TAKING_DAMAGE:${healthAlert.recentDamage.toFixed(0)}`);
+      }
+      
+      // Nearby hostiles with distance (much more actionable than just "hostile nearby")
+      if (healthAlert.nearbyHostiles && healthAlert.nearbyHostiles.length > 0) {
+        const closest = healthAlert.nearbyHostiles[0];
+        if (closest.distance <= 5) {
+          alerts.push(`DANGER_CLOSE:${closest.name}@${closest.distance.toFixed(0)}m`);
+        } else if (closest.distance <= 10) {
+          alerts.push(`THREAT_NEARBY:${closest.name}@${closest.distance.toFixed(0)}m`);
+        }
+      }
+      
+      // Critical health - FLEE NOW
+      if (hp <= 6) {
+        alerts.push('CRITICAL_HP_FLEE_NOW');
+      }
+    }
+
+    // === STUCK/WATER ALERTS ===
+    const stuckInfo = meta.stuckInfo;
+    if (stuckInfo) {
+      if (stuckInfo.inWater) {
+        alerts.push('IN_WATER');
+      }
+      if (stuckInfo.isStuck) {
+        alerts.push(`STUCK:${stuckInfo.blockedMoves}x_blocked`);
+      }
+      if (stuckInfo.inRecovery) {
+        alerts.push('RECOVERY_MODE');
+      }
+    }
 
     if (alerts.length > 0) context.alerts = alerts;
 
@@ -647,6 +760,29 @@ export class AIBrain {
         patterns.push(`⚠️ ${consecutiveFailures} consecutive failures - TRY COMPLETELY DIFFERENT APPROACH`);
       }
 
+      // DETECT REPETITIVE SUCCESS - doing the same thing forever is BORING!
+      const recentSuccesses = recentActions.filter(a => a.success);
+      if (recentSuccesses.length >= 2) {
+        const successSignatures = recentSuccesses.map(a => `${a.action.type}:${a.action.target}`);
+        const successCounts: Record<string, number> = {};
+        for (const sig of successSignatures) {
+          successCounts[sig] = (successCounts[sig] || 0) + 1;
+        }
+        
+        // Find most repeated successful action - trigger at just 2 repeats!
+        for (const [signature, count] of Object.entries(successCounts)) {
+          if (count >= 2) {
+            const [actionType, target] = signature.split(':');
+            patterns.push(`🔄 BORING: You did "${actionType} ${target}" ${count}x already! DO SOMETHING DIFFERENT NOW - move around, explore, mine trees, craft tools. Viewers want variety!`);
+            logger.warn('[LEARNING] 🔄 REPETITIVE ACTION - NEED VARIETY', { 
+              action: actionType,
+              target: target,
+              count: count 
+            });
+          }
+        }
+      }
+
       // DETECT MOVEMENT LOOPS - bot going back and forth without reaching destination
       const moveActions = recentActions.filter(a => a.action.type === 'move');
       if (moveActions.length >= 3) {
@@ -755,6 +891,12 @@ export class AIBrain {
       if (patterns.length > 0) {
         contextMessage += `\n\n⚡ LEARNING FROM FAILURES:\n${patterns.join('\n')}`;
       }
+    }
+
+    // Check for severe stuck loop - HIGHEST PRIORITY warning
+    const stuckWarning = this.getStuckLoopWarning();
+    if (stuckWarning) {
+      contextMessage = stuckWarning + '\n\n' + contextMessage;
     }
 
     // Add chat if any

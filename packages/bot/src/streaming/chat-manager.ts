@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Logger, ChatMessage, ChatResponse } from '@tau/shared';
 import { TwitchClient, TwitchChatMessage, TwitchSubscription, TwitchBits, TwitchRaid } from './twitch-client.js';
 import { XClient, XMention } from './x-client.js';
+import { chatCommands } from '../chat-commands.js';
 
 const logger = new Logger('ChatManager');
 
@@ -246,6 +247,22 @@ export class ChatManager extends EventEmitter {
     // Filter bots
     if (this.config.ignoreBots && BOT_USERNAMES.has(message.username.toLowerCase())) {
       return;
+    }
+
+    // Check for chat commands first (process for everyone, not just subs)
+    if (message.message.startsWith('!')) {
+      const wasCommand = chatCommands.processMessage(
+        message.username,
+        message.message,
+        message.isModerator || false
+      );
+      if (wasCommand) {
+        logger.debug('[COMMAND] Processed chat command', { 
+          user: message.username, 
+          command: message.message.split(' ')[0] 
+        });
+        return; // Don't process as regular message
+      }
     }
 
     // Filter by length

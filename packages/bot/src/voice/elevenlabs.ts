@@ -34,14 +34,75 @@ export class ElevenLabsClient {
 
   /**
    * Convert text to speech and return audio buffer
+   * Supports emotion-based voice modulation
+   * 
+   * @param text - Text to convert
+   * @param options - Optional voice modulation settings
+   * @param options.emotion - Current emotional state to modulate voice
+   * @param options.intensity - Emotion intensity (0-100)
    */
-  async textToSpeech(text: string): Promise<Buffer> {
+  async textToSpeech(
+    text: string,
+    options?: {
+      emotion?: 'joy' | 'frustration' | 'anger' | 'fear' | 'excitement' | 'boredom' | 'determination' | 'satisfaction' | 'curiosity';
+      intensity?: number;
+    }
+  ): Promise<Buffer> {
     if (!config.voice.apiKey) {
       throw new Error('ElevenLabs API key not configured');
     }
 
     if (!this.voiceId) {
       throw new Error('Voice ID not configured');
+    }
+
+    // Calculate voice modulation based on emotion
+    // Lower stability = more expressive/emotional
+    // Higher similarity_boost = more consistent with original voice
+    let stability = config.voice.stability ?? 0.5;
+    let similarityBoost = config.voice.similarityBoost ?? 0.75;
+
+    if (options?.emotion && options?.intensity) {
+      const intensityFactor = options.intensity / 100;
+      
+      switch (options.emotion) {
+        case 'excitement':
+        case 'joy':
+          // More expressive, slightly less stable for energy
+          stability = Math.max(0.2, stability - (0.25 * intensityFactor));
+          break;
+        case 'fear':
+          // Unstable, nervous voice
+          stability = Math.max(0.15, stability - (0.35 * intensityFactor));
+          similarityBoost = Math.max(0.5, similarityBoost - (0.2 * intensityFactor));
+          break;
+        case 'anger':
+        case 'frustration':
+          // More aggressive, less stable
+          stability = Math.max(0.25, stability - (0.3 * intensityFactor));
+          similarityBoost = Math.min(0.9, similarityBoost + (0.1 * intensityFactor));
+          break;
+        case 'boredom':
+          // More monotone, stable
+          stability = Math.min(0.8, stability + (0.2 * intensityFactor));
+          break;
+        case 'determination':
+          // Strong, confident
+          stability = Math.min(0.65, stability + (0.1 * intensityFactor));
+          similarityBoost = Math.min(0.85, similarityBoost + (0.1 * intensityFactor));
+          break;
+        case 'curiosity':
+          // Slightly questioning tone
+          stability = Math.max(0.3, stability - (0.15 * intensityFactor));
+          break;
+      }
+      
+      logger.debug('Voice modulation applied', { 
+        emotion: options.emotion, 
+        intensity: options.intensity,
+        stability: stability.toFixed(2),
+        similarityBoost: similarityBoost.toFixed(2),
+      });
     }
 
     logger.debug('Converting text to speech', {
@@ -58,8 +119,8 @@ export class ElevenLabsClient {
               text,
               model_id: 'eleven_monolingual_v1',
               voice_settings: {
-                stability: config.voice.stability,
-                similarity_boost: config.voice.similarityBoost,
+                stability,
+                similarity_boost: similarityBoost,
               },
             },
             {

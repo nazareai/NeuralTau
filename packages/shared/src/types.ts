@@ -117,7 +117,7 @@ export interface GameState {
 }
 
 export interface GameAction {
-  type: 'move' | 'interact' | 'speak' | 'wait' | 'analyze' | 'mine' | 'place' | 'attack' | 'craft' | 'dig_up' | 'eat' | 'equip';
+  type: 'move' | 'interact' | 'speak' | 'wait' | 'analyze' | 'mine' | 'place' | 'attack' | 'craft' | 'dig_up' | 'eat' | 'equip' | 'recover';
   target?: string;
   parameters?: Record<string, unknown>;
   reasoning: string;

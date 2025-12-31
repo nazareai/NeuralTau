@@ -3,6 +3,21 @@
 import { useEffect, useState, useRef } from 'react';
 import type { GameState, GameAction, EmotionalState, EmotionType } from '@tau/shared';
 
+// OBS Overlay modes
+type OverlayMode = 'full' | 'overlay' | 'chat' | 'alerts' | 'stats';
+
+function getOverlayMode(): OverlayMode {
+  if (typeof window === 'undefined') return 'full';
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  const widget = params.get('widget');
+  if (mode === 'overlay') return 'overlay';
+  if (widget === 'chat') return 'chat';
+  if (widget === 'alerts') return 'alerts';
+  if (widget === 'stats') return 'stats';
+  return 'full';
+}
+
 interface Decision {
   reasoning: string;
   action: GameAction;
@@ -43,7 +58,303 @@ const EMOTION_COLORS: Record<EmotionType, string> = {
   determination: '#F472B6',
 };
 
+// Avatar sprite mapping based on emotion
+const AVATAR_SPRITES: Record<string, string> = {
+  neutral: '/avatar/neutral.png',
+  normal: '/avatar/normal.png',
+  joy: '/avatar/smile.png',
+  excitement: '/avatar/smile.png',
+  satisfaction: '/avatar/smile.png',
+  curiosity: '/avatar/thinking.png',
+  thinking: '/avatar/thinking.png',
+  boredom: '/avatar/boredom.png',
+  frustration: '/avatar/frustration.png',
+  anger: '/avatar/frustration.png',
+  fear: '/avatar/fear.png',
+  determination: '/avatar/normal.png',
+  dead: '/avatar/dead.png',
+};
+
+// Talking animation frames
+const TALKING_FRAMES = [
+  '/avatar/talking-slightly.png',
+  '/avatar/talking-open.png',
+  '/avatar/talking-wide.png',
+  '/avatar/talking-open.png',
+];
+
+// Matrix Rain Effect Component
+function MatrixRain() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resizeCanvas = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const chars = 'τΔΣΩαβγδ01'.split('');
+    const fontSize = 12;
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops: number[] = Array(columns).fill(1);
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#00ff4488';
+      ctx.font = `${fontSize}px monospace`;
+
+      for (let i = 0; i < drops.length; i++) {
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    };
+
+    const interval = setInterval(draw, 50);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        opacity: 0.3,
+        pointerEvents: 'none',
+      }}
+    />
+  );
+}
+
+// Avatar Component
+function Avatar({ 
+  emotion, 
+  isSpeaking, 
+  isThinking,
+  isDead 
+}: { 
+  emotion: EmotionType | null; 
+  isSpeaking: boolean;
+  isThinking: boolean;
+  isDead: boolean;
+}) {
+  const [glowIntensity, setGlowIntensity] = useState(0.5);
+  const [talkingFrame, setTalkingFrame] = useState(0);
+
+  // Pulsing glow effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGlowIntensity(prev => {
+        const target = isSpeaking ? 0.9 : 0.5;
+        return prev + (target - prev) * 0.1 + (Math.random() - 0.5) * 0.1;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isSpeaking]);
+
+  // Talking animation - cycle through frames when speaking
+  useEffect(() => {
+    if (!isSpeaking) {
+      setTalkingFrame(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setTalkingFrame(prev => (prev + 1) % TALKING_FRAMES.length);
+    }, 120); // ~8 FPS for natural talking
+    return () => clearInterval(interval);
+  }, [isSpeaking]);
+
+  // Determine which sprite to show
+  const getSprite = () => {
+    // Dead state takes priority over everything
+    if (isDead) return AVATAR_SPRITES.dead;
+    // When speaking, use talking animation frames
+    if (isSpeaking) return TALKING_FRAMES[talkingFrame];
+    if (isThinking) return AVATAR_SPRITES.thinking;
+    if (emotion && AVATAR_SPRITES[emotion]) return AVATAR_SPRITES[emotion];
+    return AVATAR_SPRITES.neutral;
+  };
+
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      background: 'linear-gradient(180deg, rgba(0, 20, 0, 0.95) 0%, rgba(0, 10, 0, 0.98) 100%)',
+      borderRadius: '4px',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      {/* Matrix Rain Background */}
+      <MatrixRain />
+
+      {/* Glow backdrop */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '80%',
+        height: '80%',
+        background: `radial-gradient(ellipse, rgba(74, 222, 128, ${glowIntensity * 0.3}) 0%, transparent 70%)`,
+        filter: 'blur(20px)',
+        transition: 'opacity 0.3s ease',
+      }} />
+
+      {/* Character Container */}
+      <div style={{
+        position: 'relative',
+        zIndex: 10,
+        animation: isSpeaking 
+          ? 'avatarTalk 0.15s ease-in-out infinite alternate'
+          : 'avatarIdle 3s ease-in-out infinite',
+        transformOrigin: 'center bottom',
+      }}>
+        {/* Character Image */}
+        <img
+          src={getSprite()}
+          alt="NeuralTau Avatar"
+          style={{
+            width: '280px',
+            height: 'auto',
+            maxHeight: '320px',
+            objectFit: 'contain',
+            imageRendering: 'auto',
+            filter: `drop-shadow(0 0 ${10 + glowIntensity * 20}px rgba(74, 222, 128, ${glowIntensity}))`,
+            transition: 'filter 0.2s ease',
+          }}
+        />
+
+        {/* Speaking indicator */}
+        {isSpeaking && (
+          <div style={{
+            position: 'absolute',
+            bottom: '-10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '4px',
+          }}>
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#4ADE80',
+                  animation: `speakingDot 0.6s ease-in-out infinite`,
+                  animationDelay: `${i * 0.15}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Thinking indicator */}
+      {isThinking && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(0,0,0,0.7)',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          border: '2px solid #4ADE80',
+        }}>
+          <div style={{
+            width: '12px',
+            height: '12px',
+            border: '2px solid #4ADE80',
+            borderTop: '2px solid transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }} />
+          <span style={{
+            fontSize: '8px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#4ADE80',
+          }}>
+            THINKING
+          </span>
+        </div>
+      )}
+
+      {/* Corner tech decorations */}
+      <div style={{
+        position: 'absolute',
+        top: '8px',
+        left: '8px',
+        width: '20px',
+        height: '20px',
+        borderLeft: '3px solid #4ADE80',
+        borderTop: '3px solid #4ADE80',
+        opacity: 0.6,
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        width: '20px',
+        height: '20px',
+        borderRight: '3px solid #4ADE80',
+        borderTop: '3px solid #4ADE80',
+        opacity: 0.6,
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        left: '8px',
+        width: '20px',
+        height: '20px',
+        borderLeft: '3px solid #4ADE80',
+        borderBottom: '3px solid #4ADE80',
+        opacity: 0.6,
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        right: '8px',
+        width: '20px',
+        height: '20px',
+        borderRight: '3px solid #4ADE80',
+        borderBottom: '3px solid #4ADE80',
+        opacity: 0.6,
+      }} />
+    </div>
+  );
+}
+
 export default function Dashboard() {
+  const [overlayMode, setOverlayMode] = useState<OverlayMode>('full');
   const [connected, setConnected] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -52,19 +363,68 @@ export default function Dashboard() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingMode, setThinkingMode] = useState<'fast' | 'advanced'>('fast');
   const [emotionalState, setEmotionalState] = useState<EmotionalState | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isDead, setIsDead] = useState(false);
   const [testTimer, setTestTimer] = useState<{ active: boolean; startTime: number; duration: number }>({ active: false, startTime: 0, duration: 5 * 60 * 1000 }); // 5 minutes
   const [timerDisplay, setTimerDisplay] = useState('5:00');
   const [activity, setActivity] = useState<{ type: string; item?: string; active: boolean }>({ type: 'idle', active: false });
   const [heldItem, setHeldItem] = useState<{ name: string | null; displayName: string | null; action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' }>({ name: null, displayName: null, action: 'idle' });
   const [viewerPort, setViewerPort] = useState(3007);
   const [itemPickups, setItemPickups] = useState<{ id: number; itemName: string; displayName: string; count: number }[]>([]);
+  const [itemCrafts, setItemCrafts] = useState<{ id: number; itemName: string; displayName: string; count: number }[]>([]);
   const [streamerMessages, setStreamerMessages] = useState<{ id: number; text: string; type: string; timestamp: Date }[]>([]);
+  
+  // Viewer chat messages from Twitch
+  const [viewerChat, setViewerChat] = useState<{
+    id: string;
+    username: string;
+    displayName: string;
+    message: string;
+    platform: 'twitch' | 'x';
+    badges: { subscriber?: boolean; moderator?: boolean; vip?: boolean; verified?: boolean };
+    bits?: number;
+    timestamp: Date;
+  }[]>([]);
+  
+  // Donation/sub/raid alerts
+  const [donationAlert, setDonationAlert] = useState<{
+    type: 'subscription' | 'bits' | 'raid' | 'follow' | 'gift';
+    username: string;
+    displayName: string;
+    amount?: number;
+    message?: string;
+    months?: number;
+    giftCount?: number;
+    viewerCount?: number;
+  } | null>(null);
+  
+  const craftIdRef = useRef(0);
+  const chatIdRef = useRef(0);
+  
+  // Session stats tracking
+  const [sessionStats, setSessionStats] = useState({
+    logsMined: 0,
+    blocksMined: 0,
+    itemsCrafted: 0,
+    deaths: 0,
+    startTime: Date.now(),
+  });
+  
+  // Current objective tracking
+  const [currentObjective, setCurrentObjective] = useState<{ text: string; progress: number; total: number } | null>(null);
+  
+  // Milestone celebration
+  const [milestone, setMilestone] = useState<{ text: string; type: 'tool' | 'achievement' | 'death' } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(0.10); // 10% volume for background music
+  const [currentTrack, setCurrentTrack] = useState<string>('');
   const pickupIdRef = useRef(0);
   const messageIdRef = useRef(0);
   const wsRef = useRef<WebSocket | null>(null);
   const audioQueueRef = useRef<string[]>([]);
   const isPlayingRef = useRef(false);
+  const musicPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // Audio playback function
   const playNextAudio = () => {
@@ -74,6 +434,7 @@ export default function Dashboard() {
     if (!audioData) return;
     
     isPlayingRef.current = true;
+    setIsSpeaking(true);
     
     try {
       const binaryString = atob(audioData);
@@ -94,6 +455,7 @@ export default function Dashboard() {
         .catch(e => {
           console.warn('[AUDIO] Autoplay blocked - click Enable Audio button:', e.message);
           isPlayingRef.current = false;
+          setIsSpeaking(false);
           // Re-queue the audio for later
           audioQueueRef.current.unshift(audioData);
         });
@@ -102,17 +464,20 @@ export default function Dashboard() {
         URL.revokeObjectURL(audioUrl);
         console.log('[AUDIO] Playback finished');
         isPlayingRef.current = false;
+        setIsSpeaking(false);
         playNextAudio(); // Play next in queue
       };
       
       audio.onerror = () => {
         console.error('[AUDIO] Audio error');
         isPlayingRef.current = false;
+        setIsSpeaking(false);
         playNextAudio();
       };
     } catch (e) {
       console.error('[AUDIO] Failed to play audio:', e);
       isPlayingRef.current = false;
+      setIsSpeaking(false);
     }
   };
 
@@ -123,6 +488,91 @@ export default function Dashboard() {
     setAudioEnabled(true);
     playNextAudio();
   };
+
+  // Music player - using a global audio element to avoid React closure issues
+  const MUSIC_TRACKS = ['/music/1.mp3', '/music/2.mp3', '/music/3.mp3', '/music/4.mp3'];
+  const musicIndexRef = useRef(0);
+
+  const startMusic = () => {
+    // Create fresh audio element each time
+    if (musicPlayerRef.current) {
+      musicPlayerRef.current.pause();
+    }
+    
+    const audio = new Audio();
+    audio.volume = musicVolume;
+    
+    const playTrack = (index: number) => {
+      const track = MUSIC_TRACKS[index % MUSIC_TRACKS.length];
+      console.log('[MUSIC] Playing:', track);
+      audio.src = track;
+      audio.play()
+        .then(() => {
+          console.log('[MUSIC] Started:', track);
+          setCurrentTrack(track.split('/').pop() || '');
+        })
+        .catch((e) => console.error('[MUSIC] Failed:', e));
+    };
+    
+    audio.onended = () => {
+      musicIndexRef.current = (musicIndexRef.current + 1) % MUSIC_TRACKS.length;
+      playTrack(musicIndexRef.current);
+    };
+    
+    audio.onerror = () => {
+      console.error('[MUSIC] Error, trying next');
+      musicIndexRef.current = (musicIndexRef.current + 1) % MUSIC_TRACKS.length;
+      playTrack(musicIndexRef.current);
+    };
+    
+    musicPlayerRef.current = audio;
+    
+    // Start with random track
+    musicIndexRef.current = Math.floor(Math.random() * MUSIC_TRACKS.length);
+    playTrack(musicIndexRef.current);
+    setMusicEnabled(true);
+  };
+
+  const stopMusic = () => {
+    if (musicPlayerRef.current) {
+      musicPlayerRef.current.pause();
+      musicPlayerRef.current.src = '';
+      musicPlayerRef.current = null;
+    }
+    setMusicEnabled(false);
+    setCurrentTrack('');
+  };
+
+  // Update volume when slider changes
+  useEffect(() => {
+    if (musicPlayerRef.current) {
+      musicPlayerRef.current.volume = musicVolume;
+    }
+  }, [musicVolume]);
+
+  // Auto-start audio if ?autoplay=true in URL (for OBS)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autoplay') === 'true') {
+      console.log('[AUTOPLAY] Auto-starting audio for OBS...');
+      // Small delay to ensure page is loaded
+      setTimeout(() => {
+        // Enable voice
+        const audio = new Audio();
+        audio.play().catch(() => {});
+        setAudioEnabled(true);
+        
+        // Start music
+        startMusic();
+      }, 2000);
+    }
+  }, []);
+
+  // Set overlay mode from URL params (for OBS widgets)
+  useEffect(() => {
+    setOverlayMode(getOverlayMode());
+    console.log('[OVERLAY] Mode:', getOverlayMode());
+  }, []);
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:3002');
@@ -145,6 +595,16 @@ export default function Dashboard() {
 
         case 'gameState':
           setGameState(message.data);
+          break;
+
+        case 'death':
+          console.log('[WS] Death event received');
+          setIsDead(true);
+          break;
+
+        case 'respawn':
+          console.log('[WS] Respawn event received');
+          setIsDead(false);
           break;
 
         case 'thinking':
@@ -196,6 +656,52 @@ export default function Dashboard() {
           setTimeout(() => {
             setItemPickups(prev => prev.filter(p => p.id !== newPickup.id));
           }, 2000);
+          
+          // Track session stats for logs/blocks
+          if (message.data.itemName.includes('log')) {
+            setSessionStats(prev => ({ ...prev, logsMined: prev.logsMined + message.data.count }));
+          }
+          setSessionStats(prev => ({ ...prev, blocksMined: prev.blocksMined + message.data.count }));
+          break;
+
+        case 'itemCraft':
+          // Add new craft notification with unique ID
+          const newCraft = {
+            id: craftIdRef.current++,
+            itemName: message.data.itemName,
+            displayName: message.data.displayName,
+            count: message.data.count,
+          };
+          setItemCrafts(prev => [...prev, newCraft]);
+          // Remove after animation (2.5 seconds)
+          setTimeout(() => {
+            setItemCrafts(prev => prev.filter(c => c.id !== newCraft.id));
+          }, 2500);
+          
+          // Track crafting stats
+          setSessionStats(prev => ({ ...prev, itemsCrafted: prev.itemsCrafted + message.data.count }));
+          
+          // Detect tool milestones for celebration
+          const toolMilestones = ['wooden_pickaxe', 'stone_pickaxe', 'iron_pickaxe', 'diamond_pickaxe', 
+                                   'wooden_sword', 'stone_sword', 'iron_sword', 'diamond_sword',
+                                   'crafting_table', 'furnace'];
+          if (toolMilestones.includes(message.data.itemName)) {
+            setMilestone({ text: `🎉 ${message.data.displayName.toUpperCase()}!`, type: 'tool' });
+            setTimeout(() => setMilestone(null), 4000);
+          }
+          break;
+        
+        case 'milestone':
+          // Server-sent milestone celebrations
+          setMilestone({ text: message.data.text, type: message.data.type || 'achievement' });
+          setTimeout(() => setMilestone(null), 4000);
+          break;
+        
+        case 'death':
+          // Track deaths
+          setSessionStats(prev => ({ ...prev, deaths: prev.deaths + 1 }));
+          setMilestone({ text: '💀 DIED!', type: 'death' });
+          setTimeout(() => setMilestone(null), 4000);
           break;
 
         case 'streamerMessage':
@@ -206,6 +712,31 @@ export default function Dashboard() {
             timestamp: new Date(message.timestamp),
           };
           setStreamerMessages(prev => [newMessage, ...prev].slice(0, 20)); // Keep last 20
+          break;
+
+        case 'viewerChat':
+          const chatMsg = {
+            id: message.data.id || `chat-${chatIdRef.current++}`,
+            username: message.data.username,
+            displayName: message.data.displayName,
+            message: message.data.message,
+            platform: message.data.platform,
+            badges: message.data.badges || {},
+            bits: message.data.bits,
+            timestamp: new Date(message.timestamp),
+          };
+          setViewerChat(prev => [...prev, chatMsg].slice(-50)); // Keep last 50
+          break;
+
+        case 'donationAlert':
+          // Show big flashy alert
+          setDonationAlert(message.data);
+          // Auto-dismiss after duration based on type
+          const duration = message.data.type === 'raid' ? 8000 
+            : message.data.type === 'bits' ? (message.data.amount >= 1000 ? 10000 : 6000)
+            : message.data.type === 'gift' ? 8000
+            : 6000;
+          setTimeout(() => setDonationAlert(null), duration);
           break;
 
         case 'audio':
@@ -703,10 +1234,105 @@ export default function Dashboard() {
     );
   }
 
+  // For OBS overlay modes - render only specific widgets
+  if (overlayMode === 'chat') {
+    return (
+      <div style={{ background: 'transparent', padding: '10px' }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+          body { background: transparent !important; }
+        `}</style>
+        {/* Chat-only widget */}
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          borderRadius: '8px',
+          padding: '12px',
+          border: '2px solid rgba(139, 92, 246, 0.3)',
+          maxHeight: '400px',
+          overflow: 'hidden',
+        }}>
+          <h3 style={{
+            fontSize: '10px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#A78BFA',
+            margin: '0 0 10px 0',
+          }}>🟣 TWITCH CHAT</h3>
+          <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+            {viewerChat.slice(-10).map((msg) => (
+              <div key={msg.id} style={{ marginBottom: '6px', padding: '4px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px' }}>
+                <span style={{ fontSize: '10px', color: msg.badges.subscriber ? '#F59E0B' : '#A78BFA', fontWeight: 'bold' }}>
+                  {msg.badges.moderator && '⚔️ '}{msg.badges.subscriber && '⭐ '}{msg.username}:
+                </span>
+                <span style={{ fontSize: '11px', color: '#E5E7EB', marginLeft: '6px' }}>{msg.message}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (overlayMode === 'alerts') {
+    return (
+      <div style={{ background: 'transparent', position: 'relative', width: '100vw', height: '100vh' }}>
+        <style>{`body { background: transparent !important; }`}</style>
+        {/* Donation alerts only */}
+        {donationAlert && (
+          <div style={{
+            position: 'absolute',
+            top: '10%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}>
+            {/* Same alert component as main view */}
+            <div style={{
+              padding: '25px 50px',
+              background: donationAlert.type === 'bits' 
+                ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.98) 0%, rgba(88, 28, 135, 0.98) 100%)'
+                : 'linear-gradient(135deg, rgba(251, 191, 36, 0.98) 0%, rgba(245, 158, 11, 0.98) 100%)',
+              border: `5px solid ${donationAlert.type === 'bits' ? '#A78BFA' : '#FBBF24'}`,
+              borderRadius: '12px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '40px', marginBottom: '10px' }}>
+                {donationAlert.type === 'bits' ? '💎' : '⭐'}
+              </div>
+              <div style={{ fontSize: '18px', fontFamily: '"Press Start 2P", monospace', color: '#fff' }}>
+                {donationAlert.displayName}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (overlayMode === 'stats') {
+    return (
+      <div style={{ background: 'transparent', padding: '10px' }}>
+        <style>{`body { background: transparent !important; }`}</style>
+        {/* Stats-only widget */}
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          borderRadius: '8px',
+          padding: '10px 15px',
+          border: '2px solid rgba(74, 222, 128, 0.3)',
+          display: 'inline-flex',
+          gap: '20px',
+        }}>
+          <div style={{ fontSize: '10px', color: '#4ADE80' }}>🪵 {sessionStats.logsMined}</div>
+          <div style={{ fontSize: '10px', color: '#60A5FA' }}>⛏️ {sessionStats.blocksMined}</div>
+          <div style={{ fontSize: '10px', color: '#FBBF24' }}>🔨 {sessionStats.itemsCrafted}</div>
+          <div style={{ fontSize: '10px', color: '#EF4444' }}>💀 {sessionStats.deaths}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       height: '100vh',
-      background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
+      background: overlayMode === 'overlay' ? 'transparent' : 'linear-gradient(180deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
       color: '#F8FAFC',
       fontFamily: '"Inter", system-ui, sans-serif',
       overflow: 'hidden',
@@ -739,6 +1365,113 @@ export default function Dashboard() {
         @keyframes blink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
+        }
+
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        @keyframes craftSparkle {
+          0% { 
+            opacity: 0; 
+            transform: scale(0.5) rotate(-180deg);
+          }
+          20% { 
+            opacity: 1; 
+            transform: scale(1.2) rotate(0deg);
+          }
+          40% {
+            transform: scale(1) rotate(10deg);
+          }
+          60% {
+            transform: scale(1.1) rotate(-5deg);
+          }
+          80% { 
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+          }
+          100% { 
+            opacity: 0; 
+            transform: scale(0.8) translateY(-30px);
+          }
+        }
+
+        @keyframes craftGlow {
+          0%, 100% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+          50% { box-shadow: 0 0 25px rgba(251, 191, 36, 0.9), 0 0 50px rgba(251, 191, 36, 0.5); }
+        }
+
+        @keyframes milestoneBurst {
+          0% { 
+            opacity: 0; 
+            transform: scale(0.3) rotate(-10deg);
+          }
+          30% { 
+            opacity: 1; 
+            transform: scale(1.2) rotate(5deg);
+          }
+          50% {
+            transform: scale(1) rotate(-3deg);
+          }
+          70% {
+            transform: scale(1.05) rotate(2deg);
+          }
+          100% { 
+            opacity: 1; 
+            transform: scale(1) rotate(0deg);
+          }
+        }
+
+        @keyframes milestoneGlow {
+          0%, 100% { 
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.4);
+            filter: brightness(1);
+          }
+          50% { 
+            box-shadow: 0 0 60px rgba(251, 191, 36, 1), 0 0 100px rgba(251, 191, 36, 0.6);
+            filter: brightness(1.2);
+          }
+        }
+
+        @keyframes donationSlide {
+          0% { 
+            opacity: 0; 
+            transform: translateX(-50%) translateY(-100px) scale(0.5);
+          }
+          50% { 
+            transform: translateX(-50%) translateY(10px) scale(1.1);
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+        }
+
+        @keyframes donationPulse {
+          0%, 100% { 
+            transform: scale(1);
+            filter: brightness(1);
+          }
+          50% { 
+            transform: scale(1.02);
+            filter: brightness(1.15);
+          }
+        }
+
+        @keyframes donationBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+
+        @keyframes milestoneFadeOut {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(0.8) translateY(-20px); }
+        }
+
+        @keyframes statPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
         }
 
         @keyframes itemBob {
@@ -794,6 +1527,26 @@ export default function Dashboard() {
           0% { transform: translateY(0) scale(1); }
           50% { transform: translateY(10px) scale(0.9); }
           100% { transform: translateY(0) scale(1); }
+        }
+
+        @keyframes avatarTalk {
+          0% { transform: scaleY(1) scaleX(1); }
+          100% { transform: scaleY(0.97) scaleX(1.01); }
+        }
+
+        @keyframes avatarIdle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+
+        @keyframes speakingDot {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.5); opacity: 1; }
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
         ::-webkit-scrollbar { width: 10px; }
@@ -905,34 +1658,92 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Status indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '8px 20px',
-          background: connected
-            ? 'linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%)'
-            : 'rgba(100, 100, 100, 0.2)',
-          border: `3px solid ${connected ? '#4ADE80' : '#6B7280'}`,
-          borderRadius: '4px',
-          animation: connected ? 'glow 2s ease-in-out infinite' : 'none',
-        }}>
+        {/* Right side controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Audio Toggle */}
+          <button
+            onClick={() => {
+              const audio = new Audio();
+              audio.play().catch(() => {});
+              setAudioEnabled(true);
+              playNextAudio();
+              if (!musicEnabled) {
+                startMusic();
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 16px',
+              background: (audioEnabled && musicEnabled)
+                ? 'linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%)'
+                : 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.1) 100%)',
+              border: `3px solid ${(audioEnabled && musicEnabled) ? '#4ADE80' : '#EF4444'}`,
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>
+              {(audioEnabled && musicEnabled) ? '🔊' : '🔇'}
+            </span>
+            <span style={{
+              fontSize: '9px',
+              fontFamily: '"Press Start 2P", monospace',
+              color: (audioEnabled && musicEnabled) ? '#4ADE80' : '#EF4444',
+              textShadow: '1px 1px 0 #000',
+            }}>
+              {(audioEnabled && musicEnabled) ? 'AUDIO ON' : 'AUDIO OFF'}
+            </span>
+            {musicEnabled && (
+              <input
+                type="range"
+                min="0"
+                max="0.4"
+                step="0.05"
+                value={musicVolume}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                style={{
+                  width: '60px',
+                  height: '4px',
+                  cursor: 'pointer',
+                  marginLeft: '4px',
+                }}
+              />
+            )}
+          </button>
+
+          {/* Status indicator */}
           <div style={{
-            width: '12px',
-            height: '12px',
-            background: connected ? '#4ADE80' : '#6B7280',
-            borderRadius: '2px',
-            animation: connected ? 'pulse 1s ease-in-out infinite' : 'none',
-          }} />
-          <span style={{
-            fontSize: '10px',
-            fontFamily: '"Press Start 2P", monospace',
-            color: connected ? '#4ADE80' : '#6B7280',
-            textShadow: '1px 1px 0 #000',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '8px 20px',
+            background: connected
+              ? 'linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%)'
+              : 'rgba(100, 100, 100, 0.2)',
+            border: `3px solid ${connected ? '#4ADE80' : '#6B7280'}`,
+            borderRadius: '4px',
+            animation: connected ? 'glow 2s ease-in-out infinite' : 'none',
           }}>
-            {connected ? 'ONLINE' : 'OFFLINE'}
-          </span>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              background: connected ? '#4ADE80' : '#6B7280',
+              borderRadius: '2px',
+              animation: connected ? 'pulse 1s ease-in-out infinite' : 'none',
+            }} />
+            <span style={{
+              fontSize: '10px',
+              fontFamily: '"Press Start 2P", monospace',
+              color: connected ? '#4ADE80' : '#6B7280',
+              textShadow: '1px 1px 0 #000',
+            }}>
+              {connected ? 'ONLINE' : 'OFFLINE'}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -1058,10 +1869,12 @@ export default function Dashboard() {
                       <span style={{
                         fontSize: '10px',
                         fontFamily: '"Press Start 2P", monospace',
-                        color: minecraftState.time === 'day' ? '#FEF08A' : '#60A5FA',
+                        color: (minecraftState.time === 'day' || minecraftState.time === 'morning') ? '#FEF08A' : '#60A5FA',
                         textShadow: '1px 1px 0 #000',
                       }}>
-                        {minecraftState.time === 'day' ? '☀ DAY' : '🌙 NIGHT'}
+                        {minecraftState.time === 'day' ? '☀ DAY' : 
+                         minecraftState.time === 'morning' ? '🌅 MORNING' :
+                         minecraftState.time === 'evening' ? '🌆 EVENING' : '🌙 NIGHT'}
                       </span>
                     </div>
                     <div style={{
@@ -1216,6 +2029,19 @@ export default function Dashboard() {
             title="Minecraft Viewer"
           />
 
+          {/* Night overlay effect - darkens the view when it's night time */}
+          {(minecraftState.time === 'night' || minecraftState.time === 'evening') && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: minecraftState.time === 'night' 
+                ? 'rgba(2, 5, 15, 0.8)'
+                : 'rgba(10, 8, 25, 0.55)',
+              pointerEvents: 'none',
+              transition: 'background 2s ease',
+            }} />
+          )}
+
           {/* Thinking indicator */}
           {isThinking && (
             <div style={{
@@ -1246,8 +2072,240 @@ export default function Dashboard() {
                 color: '#fff',
                 textShadow: '1px 1px 0 #000',
               }}>
-                {thinkingMode === 'advanced' ? 'DEEP THINK' : 'PROCESSING'}
+                {thinkingMode === 'advanced' ? 'DEEP THINK' : 'AI IS THINKING'}
               </span>
+            </div>
+          )}
+
+          {/* Current Objective HUD - Top Left */}
+          <div style={{
+            position: 'absolute',
+            top: isThinking ? '70px' : '16px',
+            left: '16px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+            padding: '12px 20px',
+            border: '3px solid #4ADE80',
+            borderRadius: '4px',
+            boxShadow: '0 0 20px rgba(74, 222, 128, 0.3)',
+            minWidth: '200px',
+          }}>
+            <div style={{
+              fontSize: '8px',
+              fontFamily: '"Press Start 2P", monospace',
+              color: '#94A3B8',
+              marginBottom: '6px',
+              letterSpacing: '1px',
+            }}>
+              🎯 OBJECTIVE
+            </div>
+            <div style={{
+              fontSize: '10px',
+              fontFamily: '"Press Start 2P", monospace',
+              color: '#4ADE80',
+              textShadow: '1px 1px 0 #000',
+            }}>
+              {(() => {
+                const inv = minecraftState?.inventory || [];
+                const hasPickaxe = inv.some((i: any) => i.name.includes('pickaxe'));
+                const hasStonePickaxe = inv.some((i: any) => i.name.includes('stone_pickaxe'));
+                const hasSword = inv.some((i: any) => i.name.includes('sword'));
+                const hasCraftingTable = inv.some((i: any) => i.name === 'crafting_table');
+                const logCount = inv.filter((i: any) => i.name.includes('log')).reduce((sum: number, i: any) => sum + i.count, 0);
+                const plankCount = inv.filter((i: any) => i.name.includes('planks')).reduce((sum: number, i: any) => sum + i.count, 0);
+                const stickCount = inv.filter((i: any) => i.name === 'stick').reduce((sum: number, i: any) => sum + i.count, 0);
+                const cobbleCount = inv.filter((i: any) => i.name === 'cobblestone').reduce((sum: number, i: any) => sum + i.count, 0);
+
+                if (hasStonePickaxe) return 'FIND IRON ORE';
+                if (hasPickaxe && cobbleCount < 20) return `MINE STONE (${cobbleCount}/20)`;
+                if (hasPickaxe) return 'CRAFT STONE TOOLS';
+                if (hasCraftingTable && plankCount >= 3 && stickCount >= 2) return 'CRAFT PICKAXE';
+                if (plankCount >= 4 && !hasCraftingTable) return 'CRAFT TABLE';
+                if (plankCount >= 2 && stickCount < 2) return 'CRAFT STICKS';
+                if (logCount >= 1 && plankCount < 4) return 'CRAFT PLANKS';
+                if (logCount < 10) return `GET WOOD (${logCount}/10)`;
+                return 'EXPLORE!';
+              })()}
+            </div>
+          </div>
+
+          {/* Session Stats HUD - Top Right */}
+          <div style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+            padding: '12px 16px',
+            border: '3px solid #60A5FA',
+            borderRadius: '4px',
+            boxShadow: '0 0 20px rgba(96, 165, 250, 0.3)',
+          }}>
+            <div style={{
+              fontSize: '8px',
+              fontFamily: '"Press Start 2P", monospace',
+              color: '#94A3B8',
+              marginBottom: '8px',
+              letterSpacing: '1px',
+            }}>
+              📊 SESSION
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'auto auto',
+              gap: '4px 12px',
+              fontSize: '9px',
+              fontFamily: '"Press Start 2P", monospace',
+            }}>
+              <span style={{ color: '#94A3B8' }}>🪵</span>
+              <span style={{ color: '#4ADE80' }}>{sessionStats.logsMined}</span>
+              <span style={{ color: '#94A3B8' }}>⛏️</span>
+              <span style={{ color: '#60A5FA' }}>{sessionStats.blocksMined}</span>
+              <span style={{ color: '#94A3B8' }}>🔨</span>
+              <span style={{ color: '#FBBF24' }}>{sessionStats.itemsCrafted}</span>
+              <span style={{ color: '#94A3B8' }}>💀</span>
+              <span style={{ color: '#EF4444' }}>{sessionStats.deaths}</span>
+              <span style={{ color: '#94A3B8' }}>⏱️</span>
+              <span style={{ color: '#A855F7' }}>
+                {Math.floor((Date.now() - sessionStats.startTime) / 60000)}m
+              </span>
+            </div>
+          </div>
+
+          {/* Milestone Celebration - Center, BIG and FLASHY */}
+          {milestone && (
+            <div style={{
+              position: 'absolute',
+              top: '20%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 200,
+              pointerEvents: 'none',
+            }}>
+              <div style={{
+                padding: '20px 40px',
+                background: milestone.type === 'death' 
+                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%)'
+                  : 'linear-gradient(135deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.95) 100%)',
+                border: `4px solid ${milestone.type === 'death' ? '#EF4444' : '#FBBF24'}`,
+                borderRadius: '8px',
+                animation: 'milestoneBurst 0.5s ease-out forwards, milestoneGlow 0.8s ease-in-out infinite',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  fontSize: '20px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '3px 3px 0 #000, -1px -1px 0 #000',
+                  letterSpacing: '2px',
+                }}>
+                  {milestone.text}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DONATION/SUB/RAID ALERT - HUGE FLASHY OVERLAY */}
+          {donationAlert && (
+            <div style={{
+              position: 'absolute',
+              top: '10%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 300,
+              pointerEvents: 'none',
+              animation: 'donationSlide 0.5s ease-out forwards',
+            }}>
+              <div style={{
+                padding: donationAlert.type === 'raid' ? '30px 60px' : '25px 50px',
+                background: donationAlert.type === 'bits' 
+                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.98) 0%, rgba(88, 28, 135, 0.98) 100%)'
+                  : donationAlert.type === 'raid'
+                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.98) 0%, rgba(185, 28, 28, 0.98) 100%)'
+                    : donationAlert.type === 'gift'
+                      ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.98) 0%, rgba(190, 24, 93, 0.98) 100%)'
+                      : 'linear-gradient(135deg, rgba(251, 191, 36, 0.98) 0%, rgba(245, 158, 11, 0.98) 100%)',
+                border: `5px solid ${
+                  donationAlert.type === 'bits' ? '#A78BFA' 
+                  : donationAlert.type === 'raid' ? '#EF4444'
+                  : donationAlert.type === 'gift' ? '#EC4899'
+                  : '#FBBF24'
+                }`,
+                borderRadius: '12px',
+                boxShadow: `0 0 60px ${
+                  donationAlert.type === 'bits' ? 'rgba(139, 92, 246, 0.8)' 
+                  : donationAlert.type === 'raid' ? 'rgba(239, 68, 68, 0.8)'
+                  : donationAlert.type === 'gift' ? 'rgba(236, 72, 153, 0.8)'
+                  : 'rgba(251, 191, 36, 0.8)'
+                }`,
+                animation: 'donationPulse 0.6s ease-in-out infinite',
+                textAlign: 'center',
+                minWidth: '300px',
+              }}>
+                {/* Type Icon */}
+                <div style={{
+                  fontSize: donationAlert.type === 'raid' ? '48px' : '40px',
+                  marginBottom: '10px',
+                  animation: 'donationBounce 0.5s ease-in-out infinite',
+                }}>
+                  {donationAlert.type === 'bits' ? '💎' 
+                    : donationAlert.type === 'raid' ? '⚔️'
+                    : donationAlert.type === 'gift' ? '🎁'
+                    : donationAlert.type === 'follow' ? '💜'
+                    : '⭐'}
+                </div>
+
+                {/* Alert Title */}
+                <div style={{
+                  fontSize: donationAlert.type === 'raid' ? '24px' : '18px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '3px 3px 0 #000, -1px -1px 0 #000',
+                  letterSpacing: '2px',
+                  marginBottom: '8px',
+                }}>
+                  {donationAlert.type === 'bits' 
+                    ? `${donationAlert.amount} BITS!`
+                    : donationAlert.type === 'raid'
+                      ? `RAID INCOMING!`
+                      : donationAlert.type === 'gift'
+                        ? `GIFT SUB${donationAlert.giftCount && donationAlert.giftCount > 1 ? 'S' : ''}!`
+                        : donationAlert.type === 'follow'
+                          ? 'NEW FOLLOWER!'
+                          : 'NEW SUB!'}
+                </div>
+
+                {/* Username */}
+                <div style={{
+                  fontSize: '16px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '2px 2px 0 #000',
+                  marginBottom: donationAlert.message ? '10px' : '0',
+                }}>
+                  {donationAlert.displayName}
+                  {donationAlert.type === 'raid' && donationAlert.viewerCount && (
+                    <span style={{ color: '#FCD34D' }}> +{donationAlert.viewerCount} viewers</span>
+                  )}
+                  {donationAlert.type === 'subscription' && donationAlert.months && donationAlert.months > 1 && (
+                    <span style={{ color: '#FCD34D' }}> ({donationAlert.months} months)</span>
+                  )}
+                  {donationAlert.type === 'gift' && donationAlert.giftCount && (
+                    <span style={{ color: '#FCD34D' }}> x{donationAlert.giftCount}</span>
+                  )}
+                </div>
+
+                {/* Custom Message if any */}
+                {donationAlert.message && (
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#FEF3C7',
+                    fontStyle: 'italic',
+                    maxWidth: '400px',
+                    wordBreak: 'break-word',
+                  }}>
+                    "{donationAlert.message}"
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1295,6 +2353,47 @@ export default function Dashboard() {
                   textTransform: 'uppercase',
                 }}>
                   {pickup.displayName}
+                </span>
+              </div>
+            ))}
+            
+            {/* Craft notifications - golden/amber color */}
+            {itemCrafts.map((craft) => (
+              <div
+                key={craft.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.95) 100%)',
+                  border: '4px solid #FBBF24',
+                  borderRadius: '8px',
+                  boxShadow: '0 0 30px rgba(251, 191, 36, 0.6), 0 4px 20px rgba(0, 0, 0, 0.3)',
+                  animation: 'craftSparkle 2.5s ease-out forwards, craftGlow 0.5s ease-in-out 3',
+                }}
+              >
+                <span style={{
+                  fontSize: '18px',
+                }}>
+                  🔨
+                </span>
+                <span style={{
+                  fontSize: '24px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '2px 2px 0 #B45309, -1px -1px 0 #000',
+                }}>
+                  +{craft.count}
+                </span>
+                <span style={{
+                  fontSize: '14px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#fff',
+                  textShadow: '1px 1px 0 #000',
+                  textTransform: 'uppercase',
+                }}>
+                  {craft.displayName}
                 </span>
               </div>
             ))}
@@ -1477,306 +2576,139 @@ export default function Dashboard() {
         <aside style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '8px',
           height: '100%',
-          minHeight: 0, // Important for flex overflow
+          minHeight: 0,
         }}>
-          {/* Current Action - Fixed height, doesn't scroll */}
-          {currentDecision && (
-            <div style={{
-              flexShrink: 0,
-              position: 'relative',
-              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
-              borderRadius: '4px',
-              overflow: 'hidden',
-            }}>
+          {/* AI Avatar - HERO element at top, takes ~55% */}
+          <div style={{
+            flex: '0 0 55%',
+            position: 'relative',
+            border: '3px solid #4ADE80',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            boxShadow: '0 0 20px rgba(74, 222, 128, 0.3), inset 0 0 30px rgba(0,0,0,0.5)',
+          }}>
+            <Avatar 
+              emotion={emotionalState?.dominant || null}
+              isSpeaking={isSpeaking}
+              isThinking={isThinking}
+              isDead={isDead}
+            />
+            
+            {/* Emotion Badge Overlay - top left */}
+            {emotionalState && (
               <div style={{
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'repeating-linear-gradient(90deg, #22C55E 0px, #22C55E 8px, transparent 8px, transparent 16px)',
-              }} />
-              <div style={{ padding: '16px' }}>
-                <h3 style={{
-                  margin: '0 0 12px 0',
-                  fontSize: '10px',
-                  fontFamily: '"Press Start 2P", monospace',
-                  color: '#22C55E',
-                  textShadow: '1px 1px 0 #000',
+                top: '10px',
+                left: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                zIndex: 20,
+              }}>
+                {/* Emotion chip */}
+                <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                }}>
-                  <span style={{ fontSize: '16px' }}>⚡</span>
-                  CURRENT ACTION
-                </h3>
-                <p style={{
-                  fontSize: '12px',
-                  lineHeight: 1.6,
-                  color: '#E5E7EB',
-                  margin: '0 0 12px 0',
-                }}>
-                  {currentDecision.reasoning}
-                </p>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                  color: '#fff',
-                  padding: '10px 16px',
-                  border: '3px solid #4ADE80',
+                  gap: '6px',
+                  background: 'rgba(0,0,0,0.85)',
+                  padding: '6px 10px',
                   borderRadius: '4px',
-                  fontSize: '10px',
-                  fontFamily: '"Press Start 2P", monospace',
-                  textShadow: '1px 1px 0 #000',
-                  boxShadow: '0 4px 0 #15803D',
+                  border: `2px solid ${EMOTION_COLORS[emotionalState.dominant]}`,
+                  boxShadow: `0 0 10px ${EMOTION_COLORS[emotionalState.dominant]}44`,
                 }}>
-                  <span>→</span>
-                  {currentDecision.action.type} {currentDecision.action.target}
+                  <span style={{ fontSize: '16px' }}>{EMOTION_EMOJIS[emotionalState.dominant]}</span>
+                  <span style={{
+                    fontSize: '7px',
+                    fontFamily: '"Press Start 2P", monospace',
+                    color: EMOTION_COLORS[emotionalState.dominant],
+                  }}>
+                    {emotionalState.dominant.toUpperCase()}
+                  </span>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Emotion Panel - Shows current emotional state */}
-          {emotionalState && (
-            <div style={{
-              flexShrink: 0,
-              position: 'relative',
-              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
-              borderRadius: '4px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: `repeating-linear-gradient(90deg, ${EMOTION_COLORS[emotionalState.dominant]} 0px, ${EMOTION_COLORS[emotionalState.dominant]} 8px, transparent 8px, transparent 16px)`,
-              }} />
-              <div style={{ padding: '16px' }}>
-                <h3 style={{
-                  margin: '0 0 12px 0',
-                  fontSize: '10px',
-                  fontFamily: '"Press Start 2P", monospace',
-                  color: EMOTION_COLORS[emotionalState.dominant],
-                  textShadow: '1px 1px 0 #000',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}>
-                  <span style={{ fontSize: '20px' }}>{EMOTION_EMOJIS[emotionalState.dominant]}</span>
-                  {emotionalState.dominant.toUpperCase()}
-                </h3>
-
-                {/* Emotion intensity bar */}
+                {/* Mini intensity bar */}
                 <div style={{
-                  height: '12px',
-                  background: '#1F2937',
-                  borderRadius: '2px',
+                  width: '80px',
+                  height: '6px',
+                  background: 'rgba(0,0,0,0.8)',
+                  borderRadius: '3px',
                   overflow: 'hidden',
-                  marginBottom: '12px',
-                  border: '2px solid #374151',
+                  border: '1px solid #374151',
                 }}>
                   <div style={{
                     height: '100%',
                     width: `${emotionalState.dominantIntensity}%`,
-                    background: `linear-gradient(90deg, ${EMOTION_COLORS[emotionalState.dominant]}88 0%, ${EMOTION_COLORS[emotionalState.dominant]} 100%)`,
-                    transition: 'width 0.5s ease-out',
+                    background: EMOTION_COLORS[emotionalState.dominant],
+                    transition: 'width 0.3s ease',
                   }} />
                 </div>
+              </div>
+            )}
 
-                {/* Expression/thought bubble */}
-                {emotionalState.expression && (
-                  <div style={{
-                    background: 'rgba(0,0,0,0.4)',
-                    padding: '10px 12px',
-                    borderRadius: '4px',
-                    border: '2px solid #374151',
-                    position: 'relative',
-                  }}>
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#E5E7EB',
-                      fontStyle: 'italic',
-                      lineHeight: 1.4,
-                    }}>
-                      "{emotionalState.expression}"
-                    </span>
-                  </div>
-                )}
+            
+            {/* Name label - bottom center */}
+            <div style={{
+              position: 'absolute',
+              bottom: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0,0,0,0.85)',
+              padding: '5px 12px',
+              border: '2px solid #4ADE80',
+              borderRadius: '4px',
+              zIndex: 20,
+            }}>
+              <span style={{
+                fontSize: '8px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#4ADE80',
+                textShadow: '0 0 10px rgba(74, 222, 128, 0.5)',
+              }}>
+                NEURAL TAU
+              </span>
+            </div>
+          </div>
 
-                {/* Mood indicator */}
+          {/* Current Action - Compact bar */}
+          {currentDecision && (
+            <div style={{
+              flexShrink: 0,
+              background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%)',
+              borderRadius: '4px',
+              padding: '10px 12px',
+              borderLeft: '4px solid #22C55E',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '14px' }}>⚡</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginTop: '10px',
+                  fontSize: '9px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#22C55E',
+                  marginBottom: '4px',
                 }}>
-                  {['negative', 'neutral', 'positive'].map((mood) => (
-                    <div
-                      key={mood}
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: emotionalState.mood === mood
-                          ? (mood === 'positive' ? '#4ADE80' : mood === 'negative' ? '#EF4444' : '#FBBF24')
-                          : '#374151',
-                        boxShadow: emotionalState.mood === mood
-                          ? `0 0 8px ${mood === 'positive' ? '#4ADE80' : mood === 'negative' ? '#EF4444' : '#FBBF24'}`
-                          : 'none',
-                      }}
-                    />
-                  ))}
+                  {currentDecision.action.type.toUpperCase()} {currentDecision.action.target?.toUpperCase() || ''}
+                </div>
+                <div style={{
+                  fontSize: '10px',
+                  color: '#9CA3AF',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}>
+                  {currentDecision.reasoning}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Streamer Chat - NeuralTau's messages to viewers */}
-          <div style={{
-            flexShrink: 0,
-            maxHeight: '280px',
-            position: 'relative',
-            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'repeating-linear-gradient(90deg, #EC4899 0px, #EC4899 8px, transparent 8px, transparent 16px)',
-            }} />
-            <div style={{
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '12px',
-                flexShrink: 0,
-              }}>
-                <h3 style={{
-                  margin: 0,
-                  fontSize: '10px',
-                  fontFamily: '"Press Start 2P", monospace',
-                  color: '#EC4899',
-                  textShadow: '1px 1px 0 #000',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}>
-                  <span style={{ fontSize: '16px' }}>💬</span>
-                  NEURALTAU
-                </h3>
-                <button
-                  onClick={enableAudio}
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '8px',
-                    fontFamily: '"Press Start 2P", monospace',
-                    background: audioEnabled ? 'rgba(74, 222, 128, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-                    border: `2px solid ${audioEnabled ? '#4ADE80' : '#EF4444'}`,
-                    borderRadius: '4px',
-                    color: audioEnabled ? '#4ADE80' : '#EF4444',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  {audioEnabled ? '🔊' : '🔇'} {audioEnabled ? 'ON' : 'OFF'}
-                </button>
-              </div>
-
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}>
-                {streamerMessages.length === 0 ? (
-                  <div style={{
-                    padding: '20px',
-                    textAlign: 'center',
-                    color: '#6B7280',
-                    fontSize: '10px',
-                    fontFamily: '"Press Start 2P", monospace',
-                  }}>
-                    Waiting for stream...
-                  </div>
-                ) : (
-                  streamerMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      style={{
-                        padding: '10px 12px',
-                        background: msg.type === 'excitement' 
-                          ? 'rgba(74, 222, 128, 0.15)'
-                          : msg.type === 'frustration'
-                            ? 'rgba(239, 68, 68, 0.15)'
-                            : msg.type === 'question'
-                              ? 'rgba(251, 191, 36, 0.15)'
-                              : 'rgba(236, 72, 153, 0.1)',
-                        border: '2px solid',
-                        borderColor: msg.type === 'excitement'
-                          ? '#4ADE8044'
-                          : msg.type === 'frustration'
-                            ? '#EF444444'
-                            : msg.type === 'question'
-                              ? '#FBBF2444'
-                              : '#EC489944',
-                        borderRadius: '4px',
-                        borderLeft: '4px solid',
-                        borderLeftColor: msg.type === 'excitement'
-                          ? '#4ADE80'
-                          : msg.type === 'frustration'
-                            ? '#EF4444'
-                            : msg.type === 'question'
-                              ? '#FBBF24'
-                              : '#EC4899',
-                      }}
-                    >
-                      <p style={{
-                        margin: 0,
-                        fontSize: '12px',
-                        lineHeight: 1.5,
-                        color: '#E5E7EB',
-                      }}>
-                        {msg.text}
-                      </p>
-                      <span style={{
-                        fontSize: '8px',
-                        color: '#6B7280',
-                        marginTop: '4px',
-                        display: 'block',
-                      }}>
-                        {msg.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Log - Takes remaining space and scrolls */}
+          {/* Streamer Chat - Takes remaining space, scrollable */}
           <div style={{
             flex: 1,
-            minHeight: 0, // Critical for flex overflow to work
+            minHeight: 0,
             position: 'relative',
             background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
             borderRadius: '4px',
@@ -1789,107 +2721,87 @@ export default function Dashboard() {
               top: 0,
               left: 0,
               right: 0,
-              height: '4px',
-              background: 'repeating-linear-gradient(90deg, #FBBF24 0px, #FBBF24 8px, transparent 8px, transparent 16px)',
+              height: '3px',
+              background: 'repeating-linear-gradient(90deg, #EC4899 0px, #EC4899 6px, transparent 6px, transparent 12px)',
             }} />
+            
+            {/* Chat header */}
             <div style={{
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              flex: 1,
-              minHeight: 0,
+              padding: '10px 12px',
+              borderBottom: '1px solid #374151',
+              flexShrink: 0,
             }}>
               <h3 style={{
-                margin: '0 0 16px 0',
-                fontSize: '10px',
+                margin: 0,
+                fontSize: '8px',
                 fontFamily: '"Press Start 2P", monospace',
-                color: '#FBBF24',
-                textShadow: '1px 1px 0 #000',
+                color: '#EC4899',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                flexShrink: 0,
+                gap: '6px',
               }}>
-                <span style={{ fontSize: '16px' }}>📜</span>
-                ACTIVITY LOG
+                <span style={{ fontSize: '12px' }}>💬</span>
+                STREAM CHAT
               </h3>
+            </div>
 
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                minHeight: 0,
-                paddingRight: '4px',
-              }}>
-                {decisions.length === 0 ? (
-                  <div style={{
-                    padding: '40px',
-                    textAlign: 'center',
-                  }}>
-                    <span style={{ fontSize: '32px', display: 'block', marginBottom: '12px' }}>🌿</span>
-                    <span style={{
-                      fontSize: '10px',
-                      fontFamily: '"Press Start 2P", monospace',
-                      color: '#6B7280',
+            {/* Chat messages - scrollable */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+            }}>
+              {streamerMessages.length === 0 ? (
+                <div style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#6B7280',
+                  fontSize: '8px',
+                  fontFamily: '"Press Start 2P", monospace',
+                }}>
+                  Waiting...
+                </div>
+              ) : (
+                streamerMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    style={{
+                      padding: '8px 10px',
+                      background: msg.type === 'excitement' 
+                        ? 'rgba(74, 222, 128, 0.1)'
+                        : msg.type === 'frustration'
+                          ? 'rgba(239, 68, 68, 0.1)'
+                          : 'rgba(236, 72, 153, 0.08)',
+                      borderRadius: '4px',
+                      borderLeft: `3px solid ${
+                        msg.type === 'excitement' ? '#4ADE80'
+                        : msg.type === 'frustration' ? '#EF4444'
+                        : '#EC4899'
+                      }`,
+                    }}
+                  >
+                    <p style={{
+                      margin: 0,
+                      fontSize: '11px',
+                      lineHeight: 1.4,
+                      color: '#E5E7EB',
                     }}>
-                      NO ACTIVITY
+                      {msg.text}
+                    </p>
+                    <span style={{
+                      fontSize: '7px',
+                      color: '#6B7280',
+                      marginTop: '3px',
+                      display: 'block',
+                    }}>
+                      {msg.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {decisions.map((decision, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          padding: '12px',
-                          background: 'rgba(0,0,0,0.3)',
-                          border: '2px solid #374151',
-                          borderLeft: '4px solid #FBBF24',
-                        }}
-                      >
-                        <div style={{
-                          fontSize: '8px',
-                          fontFamily: '"Press Start 2P", monospace',
-                          color: '#6B7280',
-                          marginBottom: '8px',
-                        }}>
-                          {decision.timestamp.toLocaleTimeString()}
-                        </div>
-                        <p style={{
-                          fontSize: '11px',
-                          lineHeight: 1.5,
-                          color: '#D1D5DB',
-                          margin: '0 0 8px 0',
-                        }}>
-                          {decision.reasoning}
-                        </p>
-                        <div style={{
-                          fontSize: '10px',
-                          fontFamily: '"Press Start 2P", monospace',
-                          color: '#60A5FA',
-                          background: 'rgba(96, 165, 250, 0.1)',
-                          padding: '6px 10px',
-                          border: '2px solid rgba(96, 165, 250, 0.3)',
-                          display: 'inline-block',
-                        }}>
-                          → {decision.action.type} {decision.action.target}
-                        </div>
-                        {results[index] && (
-                          <div style={{
-                            fontSize: '10px',
-                            color: '#9CA3AF',
-                            marginTop: '8px',
-                            paddingTop: '8px',
-                            borderTop: '1px dashed #374151',
-                            fontStyle: 'italic',
-                          }}>
-                            {results[index].outcome}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                ))
+              )}
             </div>
           </div>
         </aside>

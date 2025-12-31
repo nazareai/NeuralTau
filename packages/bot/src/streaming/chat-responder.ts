@@ -6,6 +6,7 @@ import { gameManager } from '../games/game-manager.js';
 import { ChatManager, PrioritizedMessage, ChatPriority } from './chat-manager.js';
 import { TwitchSubscription, TwitchRaid } from './twitch-client.js';
 import { TauWebSocketServer } from '../websocket-server.js';
+import { viewerMemory } from '../viewer-memory.js';
 
 const logger = new Logger('ChatResponder');
 
@@ -74,7 +75,32 @@ export class ChatResponder {
    */
   private async generateResponse(msg: PrioritizedMessage): Promise<void> {
     try {
-      const response = await this.createResponse(msg);
+      // Record viewer interaction in memory
+      const viewerStatus = viewerMemory.recordInteraction(
+        msg.message.username,
+        msg.message.username,
+        {
+          isSubscriber: msg.message.isSubscriber,
+          isModerator: msg.message.isModerator,
+          bits: msg.metadata.bits,
+          subMonths: msg.metadata.subMonths,
+        }
+      );
+
+      // Check for personalized greeting opportunity
+      let personalizedGreeting: string | null = null;
+      if (viewerStatus.isNew) {
+        personalizedGreeting = `Welcome to the stream ${msg.message.username}!`;
+        logger.info('[VIEWER] New viewer detected', { username: msg.message.username });
+      } else if (viewerStatus.isReturning && viewerStatus.daysSinceLastSeen > 1) {
+        personalizedGreeting = viewerMemory.getPersonalizedGreeting(msg.message.username);
+        logger.info('[VIEWER] Returning viewer', { 
+          username: msg.message.username, 
+          daysSince: viewerStatus.daysSinceLastSeen 
+        });
+      }
+
+      const response = await this.createResponse(msg, { personalizedGreeting, viewerStatus });
       if (!response) return;
 
       // Send response based on source
@@ -90,6 +116,13 @@ export class ChatResponder {
         this.recentResponses.shift();
       }
 
+      // Record memorable interaction if it was special
+      if (msg.metadata.bits && msg.metadata.bits >= 100) {
+        viewerMemory.recordInteraction(msg.message.username, msg.message.username, {
+          memorable: `Cheered ${msg.metadata.bits} bits`,
+        });
+      }
+
       // Broadcast for dashboard
       if (this.wsServer) {
         this.wsServer.broadcastStreamerMessage({
@@ -103,6 +136,8 @@ export class ChatResponder {
         to: msg.message.username,
         priority: ChatPriority[msg.priority],
         response: response.message.substring(0, 50),
+        isNewViewer: viewerStatus.isNew,
+        isReturning: viewerStatus.isReturning,
       });
 
     } catch (error) {
@@ -113,7 +148,13 @@ export class ChatResponder {
   /**
    * Create response using AI
    */
-  private async createResponse(msg: PrioritizedMessage): Promise<ChatResponse | null> {
+  private async createResponse(
+    msg: PrioritizedMessage, 
+    viewerContext?: { 
+      personalizedGreeting: string | null; 
+      viewerStatus: { isNew: boolean; isReturning: boolean; daysSinceLastSeen: number };
+    }
+  ): Promise<ChatResponse | null> {
     // Get game context if enabled
     let gameContext = '';
     if (this.config.includeGameContext) {
@@ -135,11 +176,26 @@ CURRENT GAME STATE:
     // Build context about the message
     const messageContext = this.buildMessageContext(msg);
 
+    // Build viewer memory context
+    let viewerMemoryContext = '';
+    if (viewerContext) {
+      if (viewerContext.viewerStatus.isNew) {
+        viewerMemoryContext = '\nVIEWER INFO: This is their FIRST time chatting! Welcome them warmly.';
+      } else if (viewerContext.viewerStatus.isReturning) {
+        viewerMemoryContext = `\nVIEWER INFO: They're back after ${viewerContext.viewerStatus.daysSinceLastSeen} days! Acknowledge their return.`;
+        const viewer = viewerMemory.getViewer(msg.message.username);
+        if (viewer && viewerMemory.isRegular(msg.message.username)) {
+          viewerMemoryContext += ` They're a regular with ${viewer.messageCount} messages total.`;
+        }
+      }
+    }
+
     const prompt = `You are NeuralTau, an AI streamer playing Minecraft. You need to respond to a viewer's chat message.
 
 PERSONALITY: Energetic like Speed/xQc, genuine reactions, appreciative of support, playful banter, sometimes roasts viewers (friendly), engages with questions.
 
 ${gameContext}
+${viewerMemoryContext}
 
 VIEWER MESSAGE:
 Username: ${msg.message.username}

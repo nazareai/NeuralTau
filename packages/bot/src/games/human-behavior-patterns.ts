@@ -35,6 +35,8 @@ export class HumanBehaviorManager {
   private currentTask: string | null = null;
   private lastIdleLook: number = 0;
   private idleCheckInterval: NodeJS.Timeout | null = null;
+  private taskEndTime: number = 0; // When last task ended
+  private readonly POST_TASK_COOLDOWN_MS = 3000; // Wait 3s after task before idle looking
 
   constructor(bot: Bot, config: Partial<HumanBehaviorConfig> = {}) {
     this.bot = bot;
@@ -43,7 +45,7 @@ export class HumanBehaviorManager {
       curiosity: config.curiosity ?? 0.7,
       caution: config.caution ?? 0.8,
       focus: config.focus ?? 0.5,
-      lookFrequency: config.lookFrequency ?? 8000, // 8 seconds between looks
+      lookFrequency: config.lookFrequency ?? 12000, // 12 seconds between looks (reduced frequency to prevent "dancing")
       debugLogging: config.debugLogging ?? false,
     };
 
@@ -114,9 +116,10 @@ export class HumanBehaviorManager {
    */
   notifyTaskEnd(): void {
     if (this.config.debugLogging && this.currentTask) {
-      logger.debug('Task ended, resuming idle behavior', { task: this.currentTask });
+      logger.debug('Task ended, starting cooldown before idle behavior', { task: this.currentTask });
     }
     this.currentTask = null;
+    this.taskEndTime = Date.now(); // Start cooldown period
   }
 
   /**
@@ -157,6 +160,10 @@ export class HumanBehaviorManager {
 
     // Don't act if bot is doing a task
     if (this.currentTask !== null) return;
+
+    // Don't act if still in post-task cooldown (prevents "dancing" after navigation)
+    const timeSinceTaskEnd = Date.now() - this.taskEndTime;
+    if (timeSinceTaskEnd < this.POST_TASK_COOLDOWN_MS) return;
 
     // Don't act if in batch mode (prevents looks between batch operations)
     if (this.batchModeActive) return;

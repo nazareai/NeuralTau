@@ -5,9 +5,38 @@ import type { GameState, GameAction, Decision, EmotionalState } from '@tau/share
 const logger = new Logger('WebSocket');
 
 export interface BroadcastEvent {
-  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup' | 'streamerMessage';
+  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup' | 'streamerMessage' | 'viewerChat' | 'donationAlert';
   timestamp: Date;
   data: any;
+}
+
+export interface ViewerChatMessage {
+  id: string;
+  username: string;
+  displayName: string;
+  message: string;
+  platform: 'twitch' | 'x';
+  badges: {
+    subscriber?: boolean;
+    moderator?: boolean;
+    vip?: boolean;
+    verified?: boolean;
+  };
+  bits?: number;
+  subTier?: string;
+  subMonths?: number;
+  isBot?: boolean;
+}
+
+export interface DonationAlert {
+  type: 'subscription' | 'bits' | 'raid' | 'follow' | 'gift';
+  username: string;
+  displayName: string;
+  amount?: number;          // bits amount or sub tier (1000/2000/3000)
+  message?: string;         // custom message if any
+  months?: number;          // for subs
+  giftCount?: number;       // for gift subs
+  viewerCount?: number;     // for raids
 }
 
 export class TauWebSocketServer {
@@ -188,6 +217,22 @@ export class TauWebSocketServer {
   }
 
   /**
+   * Broadcast item craft notification for visual feedback
+   * Shows crafting animation on the frontend
+   */
+  broadcastItemCraft(craft: {
+    itemName: string;
+    displayName: string;
+    count: number;
+  }) {
+    this.broadcast({
+      type: 'itemCraft',
+      timestamp: new Date(),
+      data: craft,
+    });
+  }
+
+  /**
    * Broadcast streamer message for the chat panel
    * These are engaging messages from NeuralTau to viewers
    */
@@ -212,6 +257,63 @@ export class TauWebSocketServer {
       type: 'audio',
       timestamp: new Date(),
       data: { audio: audioBase64 },
+    });
+  }
+
+  /**
+   * Broadcast milestone celebration
+   */
+  broadcastMilestone(text: string, type: 'tool' | 'achievement' | 'death' = 'achievement') {
+    this.broadcast({
+      type: 'milestone',
+      timestamp: new Date(),
+      data: { text, type },
+    });
+  }
+
+  /**
+   * Broadcast death event - triggers dead avatar on frontend
+   */
+  broadcastDeath() {
+    this.broadcast({
+      type: 'death',
+      timestamp: new Date(),
+      data: { isDead: true },
+    });
+  }
+
+  /**
+   * Broadcast respawn event - clears dead state on frontend
+   */
+  broadcastRespawn() {
+    this.broadcast({
+      type: 'respawn',
+      timestamp: new Date(),
+      data: { isDead: false },
+    });
+  }
+
+  /**
+   * Broadcast viewer chat message
+   * Shows what viewers are saying in Twitch/X chat
+   */
+  broadcastViewerChat(message: ViewerChatMessage) {
+    this.broadcast({
+      type: 'viewerChat',
+      timestamp: new Date(),
+      data: message,
+    });
+  }
+
+  /**
+   * Broadcast donation/sub/raid alert
+   * Big flashy celebration for supporter events
+   */
+  broadcastDonationAlert(alert: DonationAlert) {
+    this.broadcast({
+      type: 'donationAlert',
+      timestamp: new Date(),
+      data: alert,
     });
   }
 

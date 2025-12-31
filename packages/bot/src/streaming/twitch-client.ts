@@ -60,9 +60,11 @@ export class TwitchClient extends EventEmitter {
   private eventSubWs: WebSocket | null = null;
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
+  private maxReconnectAttempts: number = 2;  // Reduced from 5
   private pingInterval: NodeJS.Timeout | null = null;
   private sessionId: string | null = null;
+  private broadcasterId: string | null = null;  // Cache broadcaster ID
+  private broadcasterIdAttempts: number = 0;    // Track attempts
 
   constructor(config: TwitchConfig) {
     super();
@@ -71,12 +73,19 @@ export class TwitchClient extends EventEmitter {
 
   /**
    * Connect to Twitch IRC and EventSub
+   * IRC is required, EventSub is optional (for subs/bits/raids)
    */
   async connect(): Promise<void> {
-    await Promise.all([
-      this.connectIRC(),
-      this.connectEventSub(),
-    ]);
+    // IRC is required for chat
+    await this.connectIRC();
+    
+    // EventSub is optional - don't fail if it doesn't work
+    try {
+      await this.connectEventSub();
+    } catch (error) {
+      logger.warn('EventSub connection failed (optional) - chat still works', { error });
+    }
+    
     this.isConnected = true;
     logger.info('Twitch client connected', { channel: this.config.channelName });
   }
@@ -133,6 +142,11 @@ export class TwitchClient extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.eventSubWs = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
 
+      const timeout = setTimeout(() => {
+        logger.warn('EventSub connection timeout (10s) - continuing without EventSub');
+        resolve(); // Don't reject, just continue
+      }, 10000); // 10 second timeout (reduced from 30)
+
       this.eventSubWs.on('open', () => {
         logger.info('EventSub WebSocket connected');
       });
@@ -144,6 +158,7 @@ export class TwitchClient extends EventEmitter {
           
           // Resolve once we get the welcome message with session_id
           if (message.metadata?.message_type === 'session_welcome') {
+            clearTimeout(timeout);
             resolve();
           }
         } catch (error) {
@@ -152,17 +167,15 @@ export class TwitchClient extends EventEmitter {
       });
 
       this.eventSubWs.on('error', (error) => {
-        logger.error('EventSub WebSocket error', { error: error.message });
-        reject(error);
+        logger.warn('EventSub WebSocket error (non-fatal)', { error: error.message });
+        clearTimeout(timeout);
+        resolve(); // Don't reject, EventSub is optional
       });
 
       this.eventSubWs.on('close', () => {
         logger.warn('EventSub WebSocket closed');
-        this.handleReconnect('eventsub');
+        // Don't auto-reconnect EventSub aggressively
       });
-
-      // Timeout if we don't connect
-      setTimeout(() => reject(new Error('EventSub connection timeout')), 30000);
     });
   }
 
@@ -387,10 +400,25 @@ export class TwitchClient extends EventEmitter {
   }
 
   /**
-   * Get broadcaster user ID from username
+   * Get broadcaster user ID from username (max 2 attempts, cached)
    */
   private async getBroadcasterId(): Promise<string | null> {
+    // Return cached ID
+    if (this.broadcasterId) {
+      return this.broadcasterId;
+    }
+
+    // Max 2 attempts
+    if (this.broadcasterIdAttempts >= 2) {
+      logger.warn('Max broadcaster ID attempts reached, skipping EventSub');
+      return null;
+    }
+
+    this.broadcasterIdAttempts++;
+    
     try {
+      logger.debug(`Getting broadcaster ID (attempt ${this.broadcasterIdAttempts}/2)`);
+      
       const response = await fetch(
         `https://api.twitch.tv/helix/users?login=${this.config.channelName}`,
         {
@@ -401,10 +429,19 @@ export class TwitchClient extends EventEmitter {
         }
       );
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        logger.warn('Failed to get broadcaster ID', { status: response.status });
+        return null;
+      }
 
       const data = await response.json() as { data?: Array<{ id: string }> };
-      return data.data?.[0]?.id || null;
+      this.broadcasterId = data.data?.[0]?.id || null;
+      
+      if (this.broadcasterId) {
+        logger.info('Got broadcaster ID', { id: this.broadcasterId });
+      }
+      
+      return this.broadcasterId;
     } catch (error) {
       logger.error('Failed to get broadcaster ID', { error });
       return null;
@@ -500,6 +537,13 @@ export class TwitchClient extends EventEmitter {
         this.connectEventSub().catch(err => logger.error('EventSub reconnect failed', { err }));
       }
     }, delay);
+  }
+
+  /**
+   * Check if connected to Twitch IRC
+   */
+  checkConnected(): boolean {
+    return this.isConnected && this.ircWs?.readyState === WebSocket.OPEN;
   }
 
   /**

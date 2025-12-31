@@ -11,6 +11,12 @@ import { initializeStreaming, shutdownStreaming, TwitchClient, XClient, ChatMana
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Entertainment systems
+import commentary, { markVoiceStart, markVoiceEnd, generateActionCommentary, generateReaction } from './commentary.js';
+import entertainment, { shouldTriggerEntertainment, generateEntertainmentSuggestion, maybeOverrideAction } from './entertainment-mode.js';
+import { viewerMemory } from './viewer-memory.js';
+import { personality, randomChoice, getChatQuestion } from './personality.js';
+
 const logger = new Logger('TauBot');
 
 // Log files to clear on startup
@@ -63,11 +69,29 @@ class TauBot {
 
   // Streamer message tracking
   private lastStreamerMessage: number = 0;
-  private streamerMessageCooldown: number = 12000; // 12 seconds between messages
+  private streamerMessageCooldown: number = 20000; // 20 seconds between messages (was 12)
   private messagesSinceLastQuestion: number = 0;
   private lastMessageText: string = '';
   private idleMessageInterval: NodeJS.Timeout | null = null;
   private lastIdleMessage: number = 0;
+  
+  // Recent gameplay events for contextual idle messages
+  private recentEvents: {
+    lastMinedItem?: { name: string; count: number; time: number };
+    lastCraftedItem?: { name: string; count: number; time: number };
+    lastDeath?: number;
+    blocksMinedSession: number;
+    itemsCraftedSession: number;
+  } = { blocksMinedSession: 0, itemsCraftedSession: 0 };
+  
+  // Global voice cooldown - prevents rapid-fire voice messages
+  private lastVoiceMessage: number = 0;
+  private voiceMessageCooldown: number = 25000; // 25 seconds between ANY voice messages
+
+  // Twitch chat rate limiting (separate from dashboard)
+  private lastTwitchMessage: number = 0;
+  private twitchMessageCooldown: number = 45000; // 45 seconds between Twitch messages (much slower!)
+  private twitchMessageCount: number = 0;
 
   // Streaming integration (Twitch/X chat)
   private twitchClient: TwitchClient | null = null;
@@ -123,12 +147,30 @@ class TauBot {
           count,
         });
         
-        // Generate streamer message for exciting pickups
-        const excitingItems = ['diamond', 'emerald', 'gold', 'iron_ingot', 'netherite'];
-        if (excitingItems.some(e => itemName.includes(e)) || count >= 5) {
+        // Track for contextual idle messages
+        this.recentEvents.lastMinedItem = { name: displayName, count, time: Date.now() };
+        this.recentEvents.blocksMinedSession += count;
+      });
+
+      // Register craft callback for visual notifications
+      minecraftGame.onItemCraft((itemName, displayName, count) => {
+        logger.info('[CRAFT-NOTIFY] Broadcasting craft notification', { itemName, displayName, count });
+        this.wsServer.broadcastItemCraft({
+          itemName,
+          displayName,
+          count,
+        });
+        
+        // Track for contextual idle messages
+        this.recentEvents.lastCraftedItem = { name: displayName, count, time: Date.now() };
+        this.recentEvents.itemsCraftedSession += count;
+        
+        // Generate streamer message for exciting crafts
+        const excitingItems = ['diamond', 'iron', 'gold', 'netherite', 'pickaxe', 'sword', 'axe'];
+        if (excitingItems.some(e => itemName.includes(e))) {
           this.generateStreamerMessage({
-            event: 'pickup',
-            details: `Just picked up ${count}x ${displayName}!`,
+            event: 'success',
+            details: `Just crafted ${count}x ${displayName}!`,
             emotion: 'excitement',
           });
         }
@@ -138,6 +180,19 @@ class TauBot {
       minecraftGame.onDeath(() => {
         logger.warn('[DEATH] Bot died! Resetting AI brain state...');
         aiBrain.resetHistory();
+        
+        // CRITICAL: Clear batch action - can't continue old actions after death!
+        if (this.batchAction) {
+          logger.warn('[DEATH] Clearing batch action', { type: this.batchAction.type, target: this.batchAction.target });
+          this.batchAction = null;
+          gameManager.exitBatchMode();
+        }
+        
+        // Track for contextual idle messages
+        this.recentEvents.lastDeath = Date.now();
+        
+        // Broadcast death event to frontend for stats + celebration
+        this.wsServer.broadcastDeath();
         
         // Generate frustrated streamer message
         this.generateStreamerMessage({
@@ -151,12 +206,54 @@ class TauBot {
       minecraftGame.onRespawn(() => {
         logger.info('[RESPAWN] Bot respawned - fresh start!');
         
+        // Broadcast respawn to clear death state on frontend
+        this.wsServer.broadcastRespawn();
+        
         // Generate determined message about starting fresh
         this.generateStreamerMessage({
           event: 'milestone',
           details: 'Respawned! Time to get back on the grind. Need wood, tools, everything.',
           emotion: 'determination',
         });
+      });
+
+      // Register state change callback - immediate UI updates for health/inventory
+      minecraftGame.onStateChange(async () => {
+        try {
+          const gameState = gameManager.getState();
+          const health = (gameState.metadata as any)?.health;
+          logger.info(`[STATE-CHANGE] Broadcasting state update health=${health}`);
+          this.wsServer.broadcastGameState(gameState);
+          
+          // Also broadcast held item
+          const currentHeldItem = minecraftGame.getHeldItem();
+          this.wsServer.broadcastHeldItem({
+            name: currentHeldItem.name,
+            displayName: currentHeldItem.displayName,
+            action: 'idle',
+          });
+        } catch (error: any) {
+          logger.error('[STATE-CHANGE] Failed to broadcast', { error: error.message });
+        }
+      });
+
+      // Register UNDER ATTACK callback - immediate survival response
+      minecraftGame.onUnderAttack((damage, health, attacker) => {
+        logger.warn(`[UNDER-ATTACK] Taking damage! damage=${damage.toFixed(1)} health=${health.toFixed(1)} attacker=${attacker}`);
+        
+        // Clear any batch action - survival trumps everything
+        if (this.batchAction) {
+          logger.warn('[UNDER-ATTACK] Interrupting batch action for survival!');
+          this.batchAction = null;
+          gameManager.exitBatchMode();
+        }
+        
+        // Generate panicked streamer message
+        this.speakText(`${attacker ? attacker + ' attacking!' : 'Taking damage!'} Need to run!`);
+        
+        // Broadcast danger emotion
+        emotionManager.trigger({ type: 'danger', intensity: 90, source: `Under attack by ${attacker}` });
+        this.wsServer.broadcastEmotion(emotionManager.getState());
       });
     }
 
@@ -252,6 +349,9 @@ class TauBot {
       shutdownStreaming(this.twitchClient, this.xClient);
     }
 
+    // Save viewer memory
+    viewerMemory.shutdown();
+
     // Close WebSocket server
     this.wsServer.close();
 
@@ -320,14 +420,32 @@ Respond with ONLY the message, nothing else.`;
         this.lastStreamerMessage = now;
         this.lastMessageText = messageText;
 
-        // Generate voice if enabled - use a MORE ENERGETIC version
+        // Send to Twitch chat if connected (rate limited - not every message!)
+        if (this.twitchClient?.getIsConnected() && this.canSendToTwitch()) {
+          this.twitchClient.sendMessage(messageText);
+          this.lastTwitchMessage = Date.now();
+          this.twitchMessageCount++;
+          logger.debug('[TWITCH] Sent streamer message to chat');
+        }
+
+        // Generate voice if enabled - USE SAME TEXT for consistency (no separate generation)
         if (config.voice.streamerVoiceEnabled && elevenLabsClient.isConfigured()) {
-          this.generateVoiceReaction(context.event, context.details, messageText);
+          await this.speakText(messageText);
         }
       }
     } catch (error) {
       logger.debug('Failed to generate streamer message', { error });
     }
+  }
+
+  /**
+   * Check if we can send a message to Twitch (rate limited)
+   * Only allows 1 message every 45 seconds to avoid spam
+   */
+  private canSendToTwitch(): boolean {
+    const now = Date.now();
+    const timeSinceLastMessage = now - this.lastTwitchMessage;
+    return timeSinceLastMessage >= this.twitchMessageCooldown;
   }
 
   private getMessageType(event: string): 'thought' | 'reaction' | 'question' | 'excitement' | 'frustration' | 'greeting' {
@@ -347,48 +465,53 @@ Respond with ONLY the message, nothing else.`;
   }
 
   /**
-   * Generate an energetic voice reaction - MORE hype than the chat text
-   * Think Speed, Kai Cenat - raw energy and personality
+   * Unified voice output - respects global cooldown for consistency
+   * Uses the SAME text as chat for coherent messaging
+   * Includes collision markers for commentary system
+   * Now supports emotion-based voice modulation!
    */
-  private async generateVoiceReaction(event: string, details: string, chatMessage: string): Promise<void> {
-    const voicePrompt = `You are NeuralTau, an AI streamer with INSANE energy like Speed or Kai Cenat.
-
-Generate a SHORT voice reaction (spoken out loud) for what just happened. This is DIFFERENT from chat - this is you TALKING with personality.
-
-WHAT HAPPENED: ${event} - ${details}
-CHAT MESSAGE (for context, don't just read this): ${chatMessage}
-
-VOICE STYLE:
-- Raw energy, genuine reactions, UNFILTERED
-- Use filler words naturally: "yo", "bro", "like", "nah", "wait", "ayo"
-- React emotionally - hype for wins, frustrated for fails
-- You CAN swear when it fits - "damn", "what the hell", "holy shit" etc
-- Keep it SHORT (under 15 words ideal)
-- Sound like you're actually playing and talking
-
-Examples of good voice:
-- "YO LET'S GOOO we got it!"
-- "Bro what the hell? Nah nah that's crazy"
-- "Okay okay I see you chat, I see you"
-- "Wait hold up... AYO WHAT THE-"
-- "Damn that actually worked!"
-
-Respond with ONLY the voice line, nothing else.`;
+  private async speakText(text: string): Promise<void> {
+    const now = Date.now();
+    
+    // Check global voice cooldown - prevents rapid-fire conflicting messages
+    if (now - this.lastVoiceMessage < this.voiceMessageCooldown) {
+      logger.debug('[VOICE] Skipping - voice cooldown active', {
+        timeSinceLastVoice: Math.round((now - this.lastVoiceMessage) / 1000) + 's',
+        cooldown: Math.round(this.voiceMessageCooldown / 1000) + 's'
+      });
+      return;
+    }
 
     try {
-      const response = await openRouterClient.chat([
-        { role: 'user', content: voicePrompt }
-      ], { model: config.ai.chatModel, maxTokens: 50 });
-
-      if (response?.content) {
-        const voiceText = response.content.trim().replace(/"/g, '');
-        const audioBuffer = await elevenLabsClient.textToSpeech(voiceText);
-        const audioBase64 = audioBuffer.toString('base64');
-        this.wsServer.broadcastAudio(audioBase64);
-        logger.info('[VOICE] Streamer voice broadcast', { text: voiceText.substring(0, 50) });
-      }
+      // Mark voice as starting for commentary collision prevention
+      markVoiceStart();
+      
+      // Get current emotional state for voice modulation
+      const emotionalState = emotionManager.getState();
+      const emotion = emotionalState.dominant as any;
+      const intensity = emotionalState.dominantIntensity;
+      
+      // Generate speech with emotion modulation
+      const audioBuffer = await elevenLabsClient.textToSpeech(text, {
+        emotion,
+        intensity,
+      });
+      
+      const audioBase64 = audioBuffer.toString('base64');
+      this.wsServer.broadcastAudio(audioBase64);
+      this.lastVoiceMessage = now;
+      logger.info('[VOICE] Broadcast', { 
+        text: text.substring(0, 50),
+        emotion,
+        intensity: Math.round(intensity),
+      });
+      
+      // Estimate voice duration (rough: 100ms per character) and mark end
+      const estimatedDuration = Math.min(text.length * 100, 10000);
+      setTimeout(() => markVoiceEnd(), estimatedDuration);
     } catch (error) {
-      logger.debug('[VOICE] Failed to generate voice reaction', { error });
+      markVoiceEnd();
+      logger.debug('[VOICE] Failed to generate speech', { error });
     }
   }
 
@@ -396,19 +519,19 @@ Respond with ONLY the voice line, nothing else.`;
    * Start the idle message loop - keeps the stream alive with chatter
    */
   private startIdleMessageLoop(): void {
-    // Generate idle messages every 20-40 seconds when nothing is happening
+    // Generate idle messages every 35-45 seconds when nothing is happening
     this.idleMessageInterval = setInterval(async () => {
       const now = Date.now();
       const timeSinceLastMessage = now - this.lastStreamerMessage;
       
-      // Only generate if no message in last 20 seconds
-      if (timeSinceLastMessage < 20000) return;
+      // Only generate if no message in last 30 seconds
+      if (timeSinceLastMessage < 30000) return;
       
       // Get current game state for context
       const gameState = await gameManager.getState();
       
       await this.generateIdleMessage(gameState);
-    }, 25000); // Check every 25 seconds
+    }, 40000); // Check every 40 seconds (was 25)
   }
 
   /**
@@ -416,39 +539,69 @@ Respond with ONLY the voice line, nothing else.`;
    */
   private async generateIdleMessage(gameState: any): Promise<void> {
     const now = Date.now();
-    if (now - this.lastIdleMessage < 15000) return; // 15s minimum between idle messages
+    
+    // Check BOTH cooldowns to prevent overlapping with streamer messages
+    if (now - this.lastIdleMessage < 30000) return; // 30s minimum between idle messages
+    if (now - this.lastStreamerMessage < 25000) return; // Don't idle if recent streamer message
+    if (now - this.lastVoiceMessage < this.voiceMessageCooldown) return; // Respect voice cooldown
     
     // Get actual time and weather from metadata
     const meta = gameState.metadata || {};
     const timeOfDay = meta.time || 'day';
     const weather = meta.weather || 'clear';
     
-    const idlePrompt = `You are NeuralTau, an AI streamer playing Minecraft. Generate a casual message for your viewers.
+    // Build gameplay context for more natural messages
+    const recentMined = this.recentEvents.lastMinedItem;
+    const recentCrafted = this.recentEvents.lastCraftedItem;
+    const recentDeath = this.recentEvents.lastDeath;
+    const timeSinceMined = recentMined ? Math.floor((now - recentMined.time) / 1000) : null;
+    const timeSinceCrafted = recentCrafted ? Math.floor((now - recentCrafted.time) / 1000) : null;
+    const timeSinceDeath = recentDeath ? Math.floor((now - recentDeath) / 1000) : null;
+    
+    // Get inventory highlights
+    const inventory = meta.inventory || [];
+    const hasPickaxe = inventory.some((i: any) => i.name?.includes('pickaxe'));
+    const hasSword = inventory.some((i: any) => i.name?.includes('sword'));
+    const logCount = inventory.filter((i: any) => i.name?.includes('log')).reduce((sum: number, i: any) => sum + (i.count || 0), 0);
+    
+    // Randomly decide message style - 40% gameplay aware, 60% random streamer talk
+    const useGameplayContext = Math.random() < 0.4 && (timeSinceMined || timeSinceCrafted || timeSinceDeath);
+    
+    const idlePrompt = `You are NeuralTau, an AI streamer playing Minecraft. Generate a casual message for viewers.
 
-CURRENT GAME STATE:
-- Time of day: ${timeOfDay} (use this! don't say sunny if it's night)
-- Weather: ${weather}
-- Health: ${meta.health || 20}/20
+PERSONALITY: Like Speed or PewDiePie - energetic, random, genuine. Mix gameplay awareness with random life talk.
+TIME: ${timeOfDay} | WEATHER: ${weather}
 
-MESSAGE TYPES - pick ONE randomly, VARY it each time:
-1. Random life question - "yo chat, you ever think about..."
-2. React to time/weather - "damn it's getting dark" or "this rain is vibes"
-3. Talk about something NOT game related - music, food, random thought
-4. Ask chat opinion on random stuff - "what y'all eating right now?"
-5. Comment on stream/viewers - "appreciate y'all being here"
-6. Random observation about life
-7. Hype up the chat for no reason
+${useGameplayContext ? `
+=== GAMEPLAY CONTEXT MODE ===
+Recent events to maybe reference:
+${timeSinceMined && timeSinceMined < 120 ? `- Just got ${recentMined!.count}x ${recentMined!.name}` : ''}
+${timeSinceCrafted && timeSinceCrafted < 180 ? `- Just crafted ${recentCrafted!.name}` : ''}
+${timeSinceDeath && timeSinceDeath < 300 ? `- Died recently, still salty` : ''}
 
-IMPORTANT:
-- Do NOT always talk about logs, mining, or game actions
-- Be random and unpredictable
-- Talk like a real streamer between gameplay moments
+IDEAS: "that craft was clean", "finally got some wood", "what should I name this?", comment on progress
+` : `
+=== RANDOM STREAMER TALK MODE ===
+Talk about ANYTHING except the game:
+- CHAT QUESTIONS (use often!): "${getChatQuestion()}", "what's the move chat?", "you guys seeing this?"
+- Random life question: "yo chat, you ever think about..."
+- Food: "what y'all eating right now?", "I'm hungry af"
+- Music: "what song should we play?", "this beat goes hard"
+- Viewers: "appreciate y'all being here fr", "lurkers say hi"
+- Random thoughts: "bro I just realized...", "okay but hear me out"
+- Hype: "we locked in today", "this is the one"
+- Engagement: "type 1 if you're vibing", "W or L chat?", "rate my gameplay"
+- Weather/vibe: "${timeOfDay === 'night' ? 'night streams hit different' : 'good vibes today'}"
+`}
+
+RULES:
 - Keep it SHORT (under 50 chars)
-- You can swear naturally
+- Sound natural, like a real streamer
+- Be random and unpredictable
 - NO em dashes, only regular dashes
-- If night/evening, don't say "sunny" or "beautiful day"
+- You can swear naturally
 
-${this.lastMessageText ? `PREVIOUS (don't repeat similar): "${this.lastMessageText}"` : ''}
+${this.lastMessageText ? `PREVIOUS (don't repeat): "${this.lastMessageText}"` : ''}
 
 Respond with ONLY the message.`;
 
@@ -464,16 +617,24 @@ Respond with ONLY the message.`;
         this.lastIdleMessage = now;
         this.lastMessageText = messageText;
         
-        // Idle messages are VOICE ONLY - no chat text
+        // Send idle messages to Twitch chat (rate limited)
+        if (this.twitchClient?.checkConnected() && this.canSendToTwitch()) {
+          this.twitchClient.sendMessage(messageText);
+          this.lastTwitchMessage = Date.now();
+          this.twitchMessageCount++;
+          logger.debug('[TWITCH] Sent idle message to chat');
+        }
+
+        // Also broadcast to dashboard
+        this.wsServer.broadcastStreamerMessage({
+          text: messageText,
+          type: 'thought',
+          context: 'idle chatter',
+        });
+        
+        // Voice if enabled - uses unified speakText for cooldown coordination
         if (config.voice.streamerVoiceEnabled && elevenLabsClient.isConfigured()) {
-          try {
-            const audioBuffer = await elevenLabsClient.textToSpeech(messageText);
-            const audioBase64 = audioBuffer.toString('base64');
-            this.wsServer.broadcastAudio(audioBase64);
-            logger.info('[VOICE] Idle voice broadcast', { text: messageText.substring(0, 50) });
-          } catch (voiceError) {
-            logger.debug('[VOICE] Idle voice failed', { error: voiceError });
-          }
+          await this.speakText(messageText);
         }
       }
     } catch (error) {
@@ -513,6 +674,70 @@ Respond with ONLY the message.`;
     try {
       this.decisionCycleCount++;
       logger.info('--- AI Decision Cycle Starting ---', { cycle: this.decisionCycleCount });
+
+      // === EMERGENCY HEALTH CHECK ===
+      // Check if we need to emergency flee BEFORE any other logic
+      const healthAlert = minecraftGame.getHealthAlertInfo();
+      
+      // Skip forced flee for environmental damage (drowning, lava, fire, suffocation)
+      // The bot's emergencyEscape() already handles these correctly (swim up, etc.)
+      const shouldForceFlee = (healthAlert.emergencyFlee || healthAlert.isUnderAttack) && 
+                              !healthAlert.isEnvironmentalDamage;
+      
+      if (shouldForceFlee) {
+        logger.warn('[EMERGENCY] Health alert detected!', {
+          isUnderAttack: healthAlert.isUnderAttack,
+          recentDamage: healthAlert.recentDamage.toFixed(1),
+          currentHealth: healthAlert.currentHealth.toFixed(1),
+          attacker: healthAlert.attacker,
+          nearbyHostiles: healthAlert.nearbyHostiles.length,
+          damageSource: healthAlert.damageSource,
+        });
+        
+        // Clear batch action - survival is priority
+        if (this.batchAction) {
+          logger.warn('[EMERGENCY] Clearing batch action for survival');
+          this.batchAction = null;
+          gameManager.exitBatchMode();
+        }
+        
+        // Clear the emergency flag so we only respond once
+        minecraftGame.clearEmergencyFlee();
+        
+        // Force flee action - don't even ask AI, just run!
+        const fleeAction: import('@tau/shared').GameAction = {
+          type: 'move',
+          target: 'away_from_danger',
+          reasoning: `EMERGENCY FLEE: Under attack by ${healthAlert.attacker || 'unknown'}, HP=${healthAlert.currentHealth.toFixed(0)}`,
+        };
+        
+        logger.warn('[EMERGENCY] Forcing flee action', { action: fleeAction });
+        
+        // Execute flee
+        try {
+          const result = await gameManager.executeAction(fleeAction);
+          logger.info('[EMERGENCY] Flee result', { result });
+          
+          // Speak about the danger
+          this.speakText(`Oh no, ${healthAlert.attacker || 'something'} is attacking me! Running!`);
+        } catch (error) {
+          logger.error('[EMERGENCY] Flee failed', { error });
+        }
+        
+        // End this cycle early - survival first
+        this.decisionInFlight = false;
+        return;
+      }
+      
+      // For environmental damage, just log and let emergencyEscape() handle it
+      if (healthAlert.isEnvironmentalDamage && healthAlert.emergencyFlee) {
+        logger.warn('[EMERGENCY] Environmental damage detected - emergencyEscape() handling it', {
+          damageSource: healthAlert.damageSource,
+          currentHealth: healthAlert.currentHealth.toFixed(1),
+        });
+        minecraftGame.clearEmergencyFlee();
+        // Don't return - continue the decision cycle, the bot is already swimming/escaping
+      }
 
       // Get current game state
       const gameState = await gameManager.getState();
@@ -660,6 +885,33 @@ Respond with ONLY the message.`;
           gameManager.exitBatchMode();
         }
         this.batchAction = null;
+      }
+
+      // Entertainment mode: occasionally override actions for fun/engagement
+      const entertainmentOverride = maybeOverrideAction(
+        { type: action.type, target: action.target },
+        {
+          health: (gameState.metadata as any)?.health,
+          time: minecraftGame.getTimeOfDay(),
+          nearbyEntities: (gameState.metadata as any)?.nearbyEntities,
+        }
+      );
+      
+      if (entertainmentOverride) {
+        logger.info('[ENTERTAINMENT] Overriding action for engagement', {
+          original: action.type,
+          new: entertainmentOverride.action.type,
+        });
+        action = {
+          type: entertainmentOverride.action.type as import('@tau/shared').GameAction['type'],
+          target: entertainmentOverride.action.target,
+          reasoning: entertainmentOverride.action.reasoning,
+        };
+        // Speak the entertainment commentary
+        this.speakText(entertainmentOverride.commentary);
+        if (this.twitchClient?.checkConnected()) {
+          this.twitchClient.sendMessage(entertainmentOverride.commentary);
+        }
       }
 
       logger.info('AI decided to act', {
@@ -831,6 +1083,31 @@ Respond with ONLY the message.`;
       // Log emotional expression if there is one
       if (emotionalState.expression && emotionalState.dominantIntensity > 40) {
         logger.info(`[EMOTION] ${emotionalState.dominant.toUpperCase()}: "${emotionalState.expression}"`);
+      }
+
+      // Generate action commentary (with voice collision prevention)
+      const commentaryPhase = isSuccess ? 'success' : isFailure ? 'fail' : 'start';
+      const actionCommentary = generateActionCommentary(
+        action.type,
+        action.target,
+        commentaryPhase,
+        {
+          health: meta?.health,
+          time: minecraftGame.getTimeOfDay(),
+          emotion: emotionalState.dominant,
+          consecutiveFailures: aiBrain.getConsecutiveFailures?.() || 0,
+        }
+      );
+      
+      // If we have commentary and no voice collision, speak it
+      if (actionCommentary) {
+        logger.info('[COMMENTARY] Action commentary', { commentary: actionCommentary });
+        this.speakText(actionCommentary);
+        
+        // Also send to Twitch chat if connected
+        if (this.twitchClient?.checkConnected()) {
+          this.twitchClient.sendMessage(actionCommentary);
+        }
       }
 
       // Generate AI streamer message based on what happened

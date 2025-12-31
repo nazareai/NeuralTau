@@ -130,9 +130,29 @@ export class MinecraftGame {
   // Callback for item pickups (for UI notifications)
   private onItemPickupCallback: ((itemName: string, displayName: string, count: number) => void) | null = null;
   
+  // Callback for item crafts (for UI notifications)
+  private onItemCraftCallback: ((itemName: string, displayName: string, count: number) => void) | null = null;
+  
   // Callbacks for death/respawn (to reset AI state)
   private onDeathCallback: (() => void) | null = null;
   private onRespawnCallback: (() => void) | null = null;
+
+  // Callback for immediate UI state updates (health, inventory changes)
+  private onStateChangeCallback: (() => void) | null = null;
+
+  // HEALTH MONITORING SYSTEM - Detect attacks and trigger emergency responses
+  private lastKnownHealth: number = 20;
+  private healthHistory: { health: number; time: number }[] = [];
+  private onUnderAttackCallback: ((damage: number, health: number, attacker?: string) => void) | null = null;
+  private lastDamageTime: number = 0;
+  private isUnderAttack: boolean = false;
+  private attackerName: string | null = null;
+  private damageSource: 'unknown' | 'drowning' | 'lava' | 'fire' | 'suffocation' | 'mob' = 'unknown';
+  private isEnvironmentalDamage: boolean = false;
+  private emergencyFleeRequested: boolean = false;
+  private spawnTime: number = Date.now(); // Initialize NOW to prevent false damage on connect
+  private hasSpawned: boolean = false; // Track if we've actually spawned
+  private readonly SPAWN_GRACE_PERIOD = 5000; // 5 seconds grace period after spawn
 
   // Action lock to prevent concurrent mining/movement operations
   private actionInProgress: string | null = null;
@@ -146,6 +166,19 @@ export class MinecraftGame {
   private visionBrowser: Browser | null = null;
   private visionPage: Page | null = null;
   private lastVisionAnalysis: number = 0; // Timestamp of last vision analysis (rate limiting)
+
+  // STUCK RECOVERY SYSTEM - Detect and escape from holes, water, blocked paths
+  private stuckState = {
+    consecutiveBlockedMoves: 0,      // How many moves failed due to "all directions blocked"
+    lastYBeforeStuck: 0,             // Y level before we fell into a hole
+    currentRecoveryAttempts: 0,      // How many recovery attempts we've made
+    isInRecoveryMode: false,         // Are we currently trying to recover?
+    recoveryStartTime: 0,            // When did we start recovery?
+    lastSuccessfulMoveTime: Date.now(), // When did we last move successfully?
+    positionHistoryForStuck: [] as { x: number; y: number; z: number; time: number }[], // Track position history
+  };
+  private readonly MAX_RECOVERY_ATTEMPTS = 5;
+  private readonly STUCK_THRESHOLD_MS = 30000; // If no successful move in 30s, consider stuck
 
   constructor() {
     logger.info('Minecraft game controller initialized');
@@ -423,6 +456,9 @@ export class MinecraftGame {
         this.bot!.once('spawn', () => {
           clearTimeout(timeout);
           this.isConnected = true;
+          this.hasSpawned = true; // Mark that we've actually spawned
+          this.spawnTime = Date.now(); // Track spawn time for grace period
+          this.lastKnownHealth = this.bot?.health ?? 20; // Initialize to current health
           logger.info('Successfully spawned in Minecraft world');
           resolve();
         });
@@ -506,6 +542,10 @@ export class MinecraftGame {
     });
 
     this.bot.on('death', () => {
+      // IMMEDIATELY clear all controls to prevent flying kick after respawn
+      this.clearAllControls();
+      this.isEscaping = false; // Stop any emergency escape in progress
+      
       this.sessionStats.deaths++;
       const sessionDuration = Math.floor((Date.now() - this.sessionStats.startTime) / 1000);
       logger.warn(`[SESSION-STATS] BOT DIED! Deaths this session: ${this.sessionStats.deaths}`);
@@ -528,11 +568,175 @@ export class MinecraftGame {
 
     this.bot.on('respawn', () => {
       logger.info('[SESSION-STATS] Bot respawned - fresh start!');
+      
+      // IMMEDIATELY clear all controls to prevent flying kick
+      this.clearAllControls();
+      this.isEscaping = false;
+      
       this.bot?.chat("I'm back! Starting fresh.");
+      
+      // Reset health tracking on respawn
+      this.spawnTime = Date.now(); // Reset spawn time for grace period
+      this.lastKnownHealth = this.bot?.health ?? 20;
+      this.healthHistory = [];
+      this.isUnderAttack = false;
+      this.attackerName = null;
+      this.emergencyFleeRequested = false;
+      
+      // Broadcast fresh state to UI immediately (20/20 health)
+      setTimeout(() => this.notifyStateChange(), 100);
       
       // Trigger respawn callback if registered
       if (this.onRespawnCallback) {
         this.onRespawnCallback();
+      }
+    });
+
+    // HEALTH MONITORING - Detect when taking damage
+    this.bot.on('health', () => {
+      if (!this.bot) return;
+      
+      const currentHealth = this.bot.health;
+      const now = Date.now();
+      
+      // SPAWN GRACE PERIOD - Ignore health differences right after spawn
+      // (e.g., spawning with less than full health, fall damage on spawn)
+      if (now - this.spawnTime < this.SPAWN_GRACE_PERIOD) {
+        this.lastKnownHealth = currentHealth; // Just update baseline
+        return;
+      }
+      
+      // Track health history (keep last 10 entries for pattern detection)
+      this.healthHistory.push({ health: currentHealth, time: now });
+      if (this.healthHistory.length > 10) {
+        this.healthHistory.shift();
+      }
+      
+      // IMPORTANT: Ignore health events before we've actually spawned
+      // The health event fires BEFORE spawn with garbage values
+      if (!this.hasSpawned) {
+        logger.info('[HEALTH] Ignoring health event before spawn');
+        return;
+      }
+      
+      // Detect damage (health decreased)
+      if (currentHealth < this.lastKnownHealth) {
+        const damage = this.lastKnownHealth - currentHealth;
+        this.lastDamageTime = now;
+        
+        // FIRST: Check for environmental damage sources (drowning, lava, fire, suffocation)
+        const pos = this.bot.entity.position;
+        const headBlock = this.bot.blockAt(pos.offset(0, 1.6, 0)); // Block at eye level
+        const feetBlock = this.bot.blockAt(pos);
+        const blockInside = this.bot.blockAt(pos.offset(0, 0.5, 0)); // Block torso is in
+        
+        const isHeadInWater = headBlock?.name === 'water' || headBlock?.name === 'flowing_water';
+        const isBodyInWater = feetBlock?.name === 'water' || feetBlock?.name === 'flowing_water';
+        const isInLava = feetBlock?.name === 'lava' || feetBlock?.name === 'flowing_lava' ||
+                         blockInside?.name === 'lava' || blockInside?.name === 'flowing_lava';
+        // Check fire status via entity metadata (index 0, bit 0 = on fire)
+        const entityMeta = (this.bot.entity as any).metadata;
+        const isOnFire = entityMeta && entityMeta[0] ? !!(entityMeta[0] & 0x01) : false;
+        const isSuffocating = headBlock?.boundingBox === 'block'; // Head in solid block
+        
+        // Determine damage source - set instance properties
+        this.damageSource = 'unknown';
+        this.isEnvironmentalDamage = false;
+        
+        if (isHeadInWater && !isBodyInWater) {
+          // Head in water but feet not = definitely drowning (head submerged)
+          this.damageSource = 'drowning';
+          this.isEnvironmentalDamage = true;
+        } else if (isHeadInWater && damage >= 1 && damage <= 2) {
+          // Classic drowning damage pattern (1-2 damage per tick)
+          this.damageSource = 'drowning';
+          this.isEnvironmentalDamage = true;
+        } else if (isInLava) {
+          this.damageSource = 'lava';
+          this.isEnvironmentalDamage = true;
+        } else if (isOnFire && !isInLava) {
+          this.damageSource = 'fire';
+          this.isEnvironmentalDamage = true;
+        } else if (isSuffocating) {
+          this.damageSource = 'suffocation';
+          this.isEnvironmentalDamage = true;
+        }
+        
+        // If not environmental, check for hostile mobs
+        let hasRealThreat = false;
+        if (!this.isEnvironmentalDamage) {
+          const nearbyHostiles = this.getNearbyHostileMobs(8);
+          const closestHostile = nearbyHostiles.length > 0 ? nearbyHostiles[0] : null;
+          if (closestHostile) {
+            this.damageSource = 'mob';
+            this.attackerName = closestHostile.name;
+            hasRealThreat = true;
+          }
+        }
+        
+        // Set attackerName for display purposes
+        if (!hasRealThreat) {
+          this.attackerName = this.damageSource;
+        }
+        
+        const recentDamage = this.calculateRecentDamage(5000); // Last 5 seconds for drowning
+        const isRapidDamage = recentDamage >= 3; // LOWERED from 4 - drowning is ~2/5sec
+        const isCriticalHealth = currentHealth <= 12; // RAISED from 10 - more conservative
+        
+        // Log with proper damage source identification
+        const damageIcon = this.damageSource === 'drowning' ? '🏊' : this.damageSource === 'lava' ? '🔥' : this.damageSource === 'fire' ? '🔥' : this.damageSource === 'suffocation' ? '🧱' : hasRealThreat ? '⚔️' : '❓';
+        logger.warn(`[HEALTH-ALERT] ${damageIcon} TOOK DAMAGE! damage=${damage.toFixed(1)} health=${currentHealth.toFixed(1)}/20 source=${this.damageSource} rapidDmg=${isRapidDamage} recentDmg=${recentDamage.toFixed(1)}`);
+        
+        // EMERGENCY AUTO-ESCAPE: Different triggers for different damage types
+        // Environmental damage (drowning, lava, fire) = ALWAYS escape immediately
+        // Combat damage = only on rapid damage or critical health
+        const shouldEscape = this.isEnvironmentalDamage || isCriticalHealth || isRapidDamage;
+        
+        if (shouldEscape) {
+          // Only set "under attack" for combat damage, not environmental
+          if (hasRealThreat) {
+            this.isUnderAttack = true;
+          }
+          this.emergencyFleeRequested = true;
+          
+          const escapeReason = this.isEnvironmentalDamage ? this.damageSource.toUpperCase() : 
+                               isCriticalHealth ? 'CRITICAL HP' : 'RAPID DAMAGE';
+          logger.error(`[HEALTH-ALERT] 🚨 EMERGENCY ESCAPE! reason=${escapeReason} HP=${currentHealth.toFixed(1)} - IMMEDIATE ACTION`);
+          
+          // Trigger callback for AI awareness (only for real threats)
+          if (this.onUnderAttackCallback && hasRealThreat) {
+            this.onUnderAttackCallback(damage, currentHealth, this.attackerName ?? undefined);
+          }
+          
+          // IMMEDIATE AUTO-ESCAPE - no waiting for AI!
+          this.emergencyEscape().catch(e => {
+            logger.error('[HEALTH-ALERT] Emergency escape failed', { error: e.message });
+          });
+        }
+      }
+      
+      // If health recovered, clear attack status after a delay
+      if (currentHealth > this.lastKnownHealth && now - this.lastDamageTime > 5000) {
+        this.isUnderAttack = false;
+        this.attackerName = null;
+      }
+      
+      this.lastKnownHealth = currentHealth;
+      
+      // Notify UI of health change immediately
+      this.notifyStateChange();
+    });
+
+    // Detect when hurt by entity (more specific attacker info)
+    this.bot.on('entityHurt', (entity) => {
+      if (!this.bot || entity !== this.bot.entity) return;
+      
+      // Try to find what hurt us
+      const nearbyHostiles = this.getNearbyHostileMobs(10);
+      if (nearbyHostiles.length > 0) {
+        this.attackerName = nearbyHostiles[0].name;
+        this.isUnderAttack = true;
+        logger.warn(`[HEALTH-ALERT] Hurt by entity, nearest hostile: ${this.attackerName} at ${nearbyHostiles[0].distance.toFixed(1)}m`);
       }
     });
 
@@ -603,6 +807,9 @@ export class MinecraftGame {
           if (this.onItemPickupCallback) {
             this.onItemPickupCallback(itemName, displayName, itemCount);
           }
+          
+          // Notify UI of inventory change immediately
+          this.notifyStateChange();
         }
       }
     });
@@ -710,6 +917,10 @@ export class MinecraftGame {
         ...minecraftState,
         connected: true,
         spatialObservation: spatialObs,
+        // Health monitoring data for survival decisions
+        healthAlert: this.getHealthAlertInfo(),
+        // Stuck detection data for recovery
+        stuckInfo: this.getStuckInfo(),
       },
     };
   }
@@ -794,6 +1005,10 @@ export class MinecraftGame {
 
         case 'equip':
           return await this.equip(action.target || '');
+
+        case 'recover':
+          // Recovery action - escape from holes, water, blocked paths
+          return await this.recoverFromStuck();
 
         default:
           return `Unknown action type: ${action.type}`;
@@ -949,6 +1164,12 @@ export class MinecraftGame {
         await new Promise(resolve => setTimeout(resolve, 500));
         this.bot.setControlState('sneak', false);
         return `Crouched (now at ${this.bot.entity.position.x.toFixed(0)}, ${this.bot.entity.position.y.toFixed(0)}, ${this.bot.entity.position.z.toFixed(0)})`;
+
+      case 'away_from_danger':
+      case 'flee':
+      case 'escape':
+        // EMERGENCY FLEE: Run away from the closest hostile mob
+        return await this.emergencyFlee();
 
       default:
         return `Unknown direction: ${direction}. Use north/south/east/west/northeast/northwest/southeast/southwest, forward/backward/left/right, up/down, explore, or coordinates like "10 64 -20".`;
@@ -1738,6 +1959,123 @@ export class MinecraftGame {
   }
 
   /**
+   * EMERGENCY FLEE - Run away from the closest hostile mob
+   * Uses smart pathfinding to find safe direction
+   */
+  private async emergencyFlee(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startPos = this.bot.entity.position.clone();
+    logger.warn('[EMERGENCY-FLEE] Starting emergency flee!');
+
+    // Find all nearby hostile mobs
+    const hostiles = this.getNearbyHostileMobs(15);
+    
+    if (hostiles.length === 0) {
+      logger.info('[EMERGENCY-FLEE] No hostiles found, moving to random safe direction');
+      // No hostiles visible, just run in a random direction
+      const randomYaw = Math.random() * Math.PI * 2 - Math.PI;
+      return await this.walkInDirectionByYaw(randomYaw, 12, 'flee_random');
+    }
+
+    // Calculate escape direction (opposite of the average hostile position)
+    let avgHostileX = 0;
+    let avgHostileZ = 0;
+    hostiles.forEach(h => {
+      avgHostileX += h.position.x;
+      avgHostileZ += h.position.z;
+    });
+    avgHostileX /= hostiles.length;
+    avgHostileZ /= hostiles.length;
+
+    // Direction from hostiles to us
+    const escapeX = startPos.x - avgHostileX;
+    const escapeZ = startPos.z - avgHostileZ;
+    
+    // Calculate escape yaw (direction to run)
+    const escapeYaw = Math.atan2(-escapeX, -escapeZ);
+    
+    logger.warn('[EMERGENCY-FLEE] Fleeing from hostiles', {
+      hostileCount: hostiles.length,
+      closestHostile: hostiles[0]?.name,
+      closestDistance: hostiles[0]?.distance.toFixed(1),
+      escapeDirection: (escapeYaw * 180 / Math.PI).toFixed(0) + '°',
+    });
+
+    // Sprint away!
+    this.bot.setControlState('sprint', true);
+    
+    // Run for 15 blocks
+    const result = await this.walkInDirectionByYaw(escapeYaw, 15, 'flee_from_hostiles');
+    
+    this.bot.setControlState('sprint', false);
+    
+    const endPos = this.bot.entity.position;
+    const distanceFled = startPos.distanceTo(endPos);
+    
+    logger.info('[EMERGENCY-FLEE] Flee complete', {
+      distanceFled: distanceFled.toFixed(1),
+      newPosition: `${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)}`,
+    });
+
+    return `Fled ${distanceFled.toFixed(0)} blocks from ${hostiles[0]?.name || 'danger'}!`;
+  }
+
+  /**
+   * Walk in a specific yaw direction for a given distance
+   */
+  private async walkInDirectionByYaw(targetYaw: number, distance: number, label: string): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startPos = this.bot.entity.position.clone();
+    
+    // Look in the escape direction (set yaw directly for speed in emergency)
+    await this.bot.look(targetYaw, 0, true);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Walk forward
+    this.bot.setControlState('forward', true);
+    this.bot.setControlState('sprint', true);
+    
+    // Walk for up to 5 seconds or until we've moved enough
+    const startTime = Date.now();
+    const timeout = 5000;
+    
+    while (Date.now() - startTime < timeout) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const currentPos = this.bot.entity.position;
+      const distanceMoved = startPos.distanceTo(currentPos);
+      
+      if (distanceMoved >= distance) {
+        break;
+      }
+      
+      // Jump if we hit an obstacle
+      const blockAhead = this.bot.blockAt(
+        currentPos.offset(
+          -Math.sin(targetYaw) * 1.5,
+          0,
+          -Math.cos(targetYaw) * 1.5
+        )
+      );
+      
+      if (blockAhead && blockAhead.boundingBox === 'block') {
+        if (this.canTapJump()) {
+          await this.tapJump();
+        }
+      }
+    }
+    
+    this.bot.clearControlStates();
+    
+    const endPos = this.bot.entity.position;
+    const distanceMoved = startPos.distanceTo(endPos);
+    
+    return `Moved ${distanceMoved.toFixed(0)} blocks (${label})`;
+  }
+
+  /**
    * Try to descend to lower ground - find a path down
    */
   private async descendToLowerGround(): Promise<string> {
@@ -1816,6 +2154,742 @@ export class MinecraftGame {
     }
 
     return `Cannot find lower ground from Y=${startY}. Position: ${pos.x.toFixed(0)}, ${pos.y.toFixed(0)}, ${pos.z.toFixed(0)}`;
+  }
+
+  // ============================================================================
+  // STUCK RECOVERY SYSTEM - Escape from holes, water, and blocked paths
+  // ============================================================================
+
+  /**
+   * EMERGENCY ESCAPE - Immediate survival reflex, no AI thinking
+   * Called automatically when taking rapid damage or at critical health
+   */
+  private isEscaping = false;
+  private lastEscapeTime = 0;
+  
+  private async emergencyEscape(): Promise<void> {
+    // Prevent spam - only escape once every 2 seconds
+    const now = Date.now();
+    if (this.isEscaping || now - this.lastEscapeTime < 2000) return;
+    
+    this.isEscaping = true;
+    this.lastEscapeTime = now;
+    
+    try {
+      if (!this.bot) return;
+      
+      const pos = this.bot.entity.position;
+      
+      // Check if underwater (drowning)
+      const headBlock = this.bot.blockAt(pos.offset(0, 1.6, 0));
+      const isUnderwater = headBlock?.name === 'water';
+      
+      if (isUnderwater) {
+        // DROWNING: Swim up desperately
+        logger.warn('[EMERGENCY] 🏊 DROWNING - Swimming up!');
+        this.bot.setControlState('jump', true);
+        this.bot.setControlState('forward', true);
+        
+        // Keep swimming up for 1.5 seconds (shorter to avoid issues)
+        for (let i = 0; i < 15; i++) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          // Abort if we died or disconnected
+          if (!this.bot || !this.isConnected || this.bot.health <= 0) {
+            this.clearAllControls();
+            return;
+          }
+        }
+        
+        this.bot.setControlState('jump', false);
+        this.bot.setControlState('forward', false);
+      } else {
+        // NOT DROWNING: Run away from current position
+        logger.warn('[EMERGENCY] 🏃 Taking damage - Running away!');
+        
+        // Pick a random direction and sprint
+        const directions = ['forward', 'back', 'left', 'right'] as const;
+        const randomDir = directions[Math.floor(Math.random() * directions.length)];
+        
+        this.bot.setControlState('sprint', true);
+        this.bot.setControlState(randomDir, true);
+        // Don't hold jump - causes flying kick
+        
+        // Run for 1 second (shorter bursts)
+        for (let i = 0; i < 10; i++) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          // Abort if we died or disconnected
+          if (!this.bot || !this.isConnected || this.bot.health <= 0) {
+            this.clearAllControls();
+            return;
+          }
+        }
+        
+        this.bot.setControlState('sprint', false);
+        this.bot.setControlState(randomDir, false);
+      }
+      
+      logger.info('[EMERGENCY] Escape action completed');
+    } catch (e: any) {
+      logger.error('[EMERGENCY] Escape failed', { error: e.message });
+    } finally {
+      this.isEscaping = false;
+      this.clearAllControls(); // Always clear controls when done
+    }
+  }
+
+  /**
+   * Clear all movement control states - prevents flying kicks
+   */
+  private clearAllControls(): void {
+    if (!this.bot) return;
+    try {
+      this.bot.setControlState('forward', false);
+      this.bot.setControlState('back', false);
+      this.bot.setControlState('left', false);
+      this.bot.setControlState('right', false);
+      this.bot.setControlState('jump', false);
+      this.bot.setControlState('sprint', false);
+      this.bot.setControlState('sneak', false);
+    } catch (e) {
+      // Ignore errors if bot is disconnected
+    }
+  }
+
+  /**
+   * Main recovery action - called when bot is stuck
+   * Tries multiple strategies: horizontal mining, pillar up, dig stairs, swim out
+   */
+  public async recoverFromStuck(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const pos = this.bot.entity.position;
+    const startPos = pos.clone(); // Track for actual movement verification
+    const currentY = Math.floor(pos.y);
+    
+    logger.warn('[STUCK-RECOVERY] Starting stuck recovery!', {
+      position: `${pos.x.toFixed(0)}, ${pos.y.toFixed(0)}, ${pos.z.toFixed(0)}`,
+      attempt: this.stuckState.currentRecoveryAttempts + 1,
+      maxAttempts: this.MAX_RECOVERY_ATTEMPTS
+    });
+
+    // CRITICAL: Disable idle looking during recovery!
+    this.isNavigating = true;
+    this.humanBehavior?.notifyTaskStart('recovery');
+
+    this.stuckState.isInRecoveryMode = true;
+    this.stuckState.currentRecoveryAttempts++;
+
+    // Check if we're in water first
+    const currentBlock = this.bot.blockAt(pos);
+    const isInWater = currentBlock?.name === 'water' || currentBlock?.name === 'flowing_water';
+
+    if (isInWater) {
+      const swimResult = await this.swimToSurface();
+      if (swimResult.includes('Success')) {
+        this.resetStuckState();
+        return swimResult;
+      }
+    }
+
+    // NEW: Check if we're at surface level but horizontally blocked
+    // This is the case when Y >= 60 and skyLight is high (can see sky) but can't move
+    const blockAboveHead = this.bot.blockAt(pos.offset(0, 2, 0));
+    const isAtSurface = currentY >= 60 && blockAboveHead && blockAboveHead.skyLight >= 10;
+    
+    if (isAtSurface) {
+      logger.info('[STUCK-RECOVERY] Detected surface-level horizontal blocking, trying horizontal escape');
+      
+      // Strategy 0: Mine horizontally to clear path (for surface-level stuck)
+      const horizontalResult = await this.mineHorizontalEscape();
+      const endPos = this.bot.entity.position;
+      const distMoved = startPos.distanceTo(endPos);
+      
+      if (horizontalResult.includes('Success') || distMoved > 2) {
+        this.resetStuckState();
+        return horizontalResult;
+      }
+    }
+
+    // Check inventory for blocks we can use to pillar up
+    const pillarBlocks = ['dirt', 'cobblestone', 'stone', 'deepslate', 'netherrack', 'gravel', 'sand', 'oak_planks', 'spruce_planks', 'birch_planks'];
+    let hasBlocks = false;
+    let blockToUse = '';
+    
+    for (const blockName of pillarBlocks) {
+      const item = this.bot.inventory.items().find(i => i.name === blockName);
+      if (item && item.count >= 3) {
+        hasBlocks = true;
+        blockToUse = blockName;
+        break;
+      }
+    }
+
+    // Strategy 1: Pillar up if we have blocks (only if NOT at surface)
+    if (hasBlocks && !isAtSurface) {
+      const pillarResult = await this.pillarUp(blockToUse, 5);
+      if (pillarResult.includes('Success') || pillarResult.includes('pillared')) {
+        this.resetStuckState();
+        return pillarResult;
+      }
+    }
+
+    // Strategy 2: Dig stairs upward (skip if already at surface)
+    if (!isAtSurface) {
+      const stairsResult = await this.digStairsUp();
+      if (stairsResult.includes('Success') || stairsResult.includes('dug')) {
+        this.resetStuckState();
+        return stairsResult;
+      }
+    }
+
+    // Strategy 3: Just jump repeatedly while moving forward
+    const jumpResult = await this.jumpSpamEscape();
+    const finalPos = this.bot.entity.position;
+    const totalDistMoved = startPos.distanceTo(finalPos);
+    
+    if (jumpResult.includes('escaped') || totalDistMoved > 2) {
+      this.resetStuckState();
+      return jumpResult;
+    }
+
+    // If we've tried too many times, give up on this stuck state
+    if (this.stuckState.currentRecoveryAttempts >= this.MAX_RECOVERY_ATTEMPTS) {
+      logger.error('[STUCK-RECOVERY] Max attempts reached, giving up');
+      this.resetStuckState();
+      return `Failed to recover after ${this.MAX_RECOVERY_ATTEMPTS} attempts - need different approach`;
+    }
+
+    // Still in recovery mode but this attempt didn't fully succeed
+    // Keep navigation mode on but allow next cycle to try again
+    this.isNavigating = false;
+    this.humanBehavior?.notifyTaskEnd();
+    
+    return `Recovery attempt ${this.stuckState.currentRecoveryAttempts} failed - still stuck, trying again`;
+  }
+
+  /**
+   * Mine horizontally to escape surface-level blocking
+   * Used when bot is at surface (can see sky) but can't move in any direction
+   */
+  private async mineHorizontalEscape(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startPos = this.bot.entity.position.clone();
+    logger.info('[HORIZONTAL-ESCAPE] Starting horizontal mining escape');
+
+    // Try each direction - mine any blocking blocks at feet and head level
+    const directions = [
+      { dx: 1, dz: 0, name: 'east' },
+      { dx: -1, dz: 0, name: 'west' },
+      { dx: 0, dz: 1, name: 'south' },
+      { dx: 0, dz: -1, name: 'north' },
+    ];
+
+    // Non-mineable blocks we should skip
+    const skipBlocks = new Set(['water', 'flowing_water', 'lava', 'flowing_lava', 'air', 'bedrock', 'barrier']);
+    
+    let blocksMinedTotal = 0;
+    let successDir = '';
+
+    for (const dir of directions) {
+      const pos = this.bot.entity.position;
+      let blocksMined = 0;
+
+      // Mine up to 3 blocks in this direction
+      for (let dist = 1; dist <= 3; dist++) {
+        const checkX = Math.floor(pos.x) + dir.dx * dist;
+        const checkZ = Math.floor(pos.z) + dir.dz * dist;
+        
+        // Check blocks at feet and head level
+        const feetPos = new Vec3(checkX, Math.floor(pos.y), checkZ);
+        const headPos = new Vec3(checkX, Math.floor(pos.y) + 1, checkZ);
+        
+        for (const blockPos of [feetPos, headPos]) {
+          const block = this.bot.blockAt(blockPos);
+          
+          if (block && !skipBlocks.has(block.name)) {
+            try {
+              // Look at the block
+              await this.bot.lookAt(blockPos.offset(0.5, 0.5, 0.5), false);
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              // Mine it
+              await this.bot.dig(block);
+              blocksMined++;
+              blocksMinedTotal++;
+              logger.info('[HORIZONTAL-ESCAPE] Mined block', { block: block.name, dir: dir.name, dist });
+            } catch (e) {
+              logger.warn('[HORIZONTAL-ESCAPE] Failed to mine', { block: block.name, error: e });
+            }
+          }
+        }
+
+        // Check if there's now a clear path (air at feet and head level)
+        const feetBlock = this.bot.blockAt(feetPos);
+        const headBlock = this.bot.blockAt(headPos);
+        const groundBlock = this.bot.blockAt(feetPos.offset(0, -1, 0));
+        
+        if (feetBlock?.name === 'air' && headBlock?.name === 'air' && 
+            groundBlock && !skipBlocks.has(groundBlock.name)) {
+          // Try to walk there
+          const yaw = Math.atan2(-dir.dx, -dir.dz);
+          await this.bot.look(yaw, 0, false);
+          
+          this.bot.setControlState('forward', true);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          this.bot.clearControlStates();
+          
+          const endPos = this.bot.entity.position;
+          const distMoved = startPos.distanceTo(endPos);
+          
+          if (distMoved > 1.5) {
+            successDir = dir.name;
+            logger.info('[HORIZONTAL-ESCAPE] Cleared path!', { dir: dir.name, blocksMined, distMoved: distMoved.toFixed(1) });
+            return `Success! Cleared path ${dir.name}, mined ${blocksMined} blocks, moved ${distMoved.toFixed(1)} blocks`;
+          }
+        }
+      }
+    }
+
+    // Even if we didn't move, report what we mined
+    const finalPos = this.bot.entity.position;
+    const finalDist = startPos.distanceTo(finalPos);
+    
+    if (blocksMinedTotal > 0) {
+      if (finalDist > 1) {
+        return `Success! Mined ${blocksMinedTotal} blocks, moved ${finalDist.toFixed(1)} blocks`;
+      }
+      return `Mined ${blocksMinedTotal} blocks but path still blocked - may need more mining`;
+    }
+
+    return 'No mineable blocks found - may be surrounded by water/lava';
+  }
+
+  /**
+   * Pillar up - jump and place block below to climb out of hole
+   */
+  private async pillarUp(blockName: string, targetHeight: number = 5): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startY = Math.floor(this.bot.entity.position.y);
+    const item = this.bot.inventory.items().find(i => i.name === blockName);
+    
+    if (!item) {
+      return `No ${blockName} in inventory for pillar`;
+    }
+
+    logger.info('[PILLAR-UP] Starting pillar escape', { block: blockName, targetHeight });
+
+    // Equip the block
+    try {
+      await this.bot.equip(item, 'hand');
+    } catch (e) {
+      return `Failed to equip ${blockName}`;
+    }
+
+    let blocksPlaced = 0;
+    const maxBlocks = Math.min(targetHeight, item.count);
+
+    for (let i = 0; i < maxBlocks; i++) {
+      try {
+        // Jump
+        this.bot.setControlState('jump', true);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // At peak of jump, place block below
+        const blockBelow = this.bot.blockAt(this.bot.entity.position.offset(0, -1, 0));
+        if (blockBelow && blockBelow.name === 'air') {
+          // Find adjacent block to place against
+          const adjacentPositions = [
+            this.bot.entity.position.offset(0, -2, 0),
+            this.bot.entity.position.offset(1, -1, 0),
+            this.bot.entity.position.offset(-1, -1, 0),
+            this.bot.entity.position.offset(0, -1, 1),
+            this.bot.entity.position.offset(0, -1, -1),
+          ];
+          
+          for (const adjPos of adjacentPositions) {
+            const adjBlock = this.bot.blockAt(adjPos);
+            if (adjBlock && adjBlock.name !== 'air') {
+              await this.bot.placeBlock(adjBlock, new Vec3(0, 1, 0));
+              blocksPlaced++;
+              logger.info('[PILLAR-UP] Placed block', { placed: blocksPlaced, y: Math.floor(this.bot.entity.position.y) });
+              break;
+            }
+          }
+        }
+        
+        this.bot.setControlState('jump', false);
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Check if we can see sky or have reached target
+        const currentY = Math.floor(this.bot.entity.position.y);
+        const blockAbove = this.bot.blockAt(this.bot.entity.position.offset(0, 2, 0));
+        if (blockAbove && blockAbove.skyLight === 15) {
+          logger.info('[PILLAR-UP] Reached surface!');
+          break;
+        }
+        if (currentY - startY >= targetHeight) {
+          break;
+        }
+      } catch (e) {
+        logger.warn('[PILLAR-UP] Failed to place block', { error: e });
+      }
+    }
+
+    this.bot.setControlState('jump', false);
+    
+    const finalY = Math.floor(this.bot.entity.position.y);
+    const heightGained = finalY - startY;
+
+    if (heightGained > 0) {
+      return `Success! Pillared up ${heightGained} blocks using ${blocksPlaced} ${blockName}`;
+    }
+    return `Pillar failed - could not place blocks`;
+  }
+
+  /**
+   * Dig stairs upward - mine a diagonal staircase to escape
+   */
+  private async digStairsUp(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startY = Math.floor(this.bot.entity.position.y);
+    logger.info('[DIG-STAIRS] Starting stair escape from Y=' + startY);
+
+    // Pick a direction and dig stairs
+    const directions = [
+      { dx: 0, dz: 1, name: 'south' },
+      { dx: 1, dz: 0, name: 'east' },
+      { dx: 0, dz: -1, name: 'north' },
+      { dx: -1, dz: 0, name: 'west' },
+    ];
+    
+    // Find best direction (preferring where there's already some air)
+    let bestDir = directions[0];
+    let bestAirCount = 0;
+    
+    for (const dir of directions) {
+      const pos = this.bot.entity.position;
+      let airCount = 0;
+      for (let i = 1; i <= 3; i++) {
+        const checkBlock = this.bot.blockAt(new Vec3(
+          Math.floor(pos.x) + dir.dx * i,
+          Math.floor(pos.y) + i,
+          Math.floor(pos.z) + dir.dz * i
+        ));
+        if (checkBlock && checkBlock.name === 'air') airCount++;
+      }
+      if (airCount > bestAirCount) {
+        bestAirCount = airCount;
+        bestDir = dir;
+      }
+    }
+
+    logger.info('[DIG-STAIRS] Digging stairs ' + bestDir.name);
+
+    // Check if we're already at surface (skyLight >= 10) - if so, dig horizontally instead of upward
+    const initialBlockAbove = this.bot.blockAt(this.bot.entity.position.offset(0, 2, 0));
+    const alreadyAtSurface = startY >= 60 && initialBlockAbove && initialBlockAbove.skyLight >= 10;
+    
+    if (alreadyAtSurface) {
+      logger.info('[DIG-STAIRS] Already at surface, digging horizontally instead');
+    }
+
+    // Dig 5 stair steps (or horizontal steps if at surface)
+    let stepsDug = 0;
+    const startPos = this.bot.entity.position.clone();
+    
+    for (let step = 0; step < 5; step++) {
+      const pos = this.bot.entity.position;
+      
+      // If at surface, dig horizontally (same Y level). Otherwise dig upward.
+      const yOffset = alreadyAtSurface ? 0 : step;
+      const headY = Math.floor(pos.y) + 1;
+      const feetY = Math.floor(pos.y);
+      const forwardX = Math.floor(pos.x) + bestDir.dx * (step + 1);
+      const forwardZ = Math.floor(pos.z) + bestDir.dz * (step + 1);
+
+      // Dig blocks at head and feet level in front
+      for (const y of [headY, feetY]) {
+        const blockPos = new Vec3(forwardX, y, forwardZ);
+        const block = this.bot.blockAt(blockPos);
+        
+        if (block && block.name !== 'air' && block.name !== 'water' && block.name !== 'lava' && block.name !== 'bedrock') {
+          try {
+            // Look at block
+            await this.bot.lookAt(blockPos.offset(0.5, 0.5, 0.5));
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Mine it
+            await this.bot.dig(block);
+            stepsDug++;
+            logger.info('[DIG-STAIRS] Dug block', { block: block.name, y, horizontal: alreadyAtSurface });
+          } catch (e) {
+            logger.warn('[DIG-STAIRS] Failed to dig', { block: block?.name, error: e });
+          }
+        }
+      }
+
+      // Move forward (and up if not at surface)
+      this.bot.setControlState('forward', true);
+      if (!alreadyAtSurface) {
+        this.bot.setControlState('jump', true);
+      }
+      await new Promise(resolve => setTimeout(resolve, 400));
+      this.bot.setControlState('jump', false);
+      this.bot.setControlState('forward', false);
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Check if we've made progress (moved from start position)
+      const currentPos = this.bot.entity.position;
+      const distMoved = startPos.distanceTo(currentPos);
+      
+      // Only exit early if we've actually moved AND can see sky
+      const blockAbove = this.bot.blockAt(currentPos.offset(0, 3, 0));
+      if (blockAbove && blockAbove.skyLight === 15 && distMoved > 2) {
+        logger.info('[DIG-STAIRS] Reached surface and moved!', { distMoved: distMoved.toFixed(1) });
+        break;
+      }
+    }
+
+    this.bot.clearControlStates();
+    
+    const finalPos = this.bot.entity.position;
+    const finalY = Math.floor(finalPos.y);
+    const heightGained = finalY - startY;
+    const distanceMoved = startPos.distanceTo(finalPos);
+
+    // Success if we gained height OR moved horizontally
+    if (heightGained > 0) {
+      return `Success! Dug stairs ${bestDir.name}, climbed ${heightGained} blocks`;
+    }
+    if (distanceMoved > 2) {
+      return `Success! Dug horizontal path ${bestDir.name}, moved ${distanceMoved.toFixed(1)} blocks`;
+    }
+    if (stepsDug > 0) {
+      return `Dug ${stepsDug} blocks ${bestDir.name} but path still blocked`;
+    }
+    return `Stair digging incomplete - dug ${stepsDug} blocks but didn't move`;
+  }
+
+  /**
+   * Swim to surface - for water escapes
+   */
+  private async swimToSurface(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startY = Math.floor(this.bot.entity.position.y);
+    logger.info('[SWIM] Starting swim to surface from Y=' + startY);
+
+    // Hold jump to swim up
+    this.bot.setControlState('jump', true);
+    this.bot.setControlState('forward', true);
+
+    const startTime = Date.now();
+    const timeout = 10000; // 10 second timeout
+
+    while (Date.now() - startTime < timeout) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const pos = this.bot.entity.position;
+      const currentBlock = this.bot.blockAt(pos);
+      
+      // Check if we've surfaced
+      if (!currentBlock || currentBlock.name !== 'water') {
+        // We're out of water!
+        this.bot.clearControlStates();
+        const finalY = Math.floor(pos.y);
+        logger.info('[SWIM] Surfaced!', { startY, finalY });
+        
+        // Now try to find shore
+        await this.findShore();
+        
+        return `Success! Swam to surface (Y=${startY} → Y=${finalY})`;
+      }
+    }
+
+    this.bot.clearControlStates();
+    return `Swim failed - still in water after ${timeout/1000}s`;
+  }
+
+  /**
+   * Find and move to shore from water
+   */
+  private async findShore(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    // Look for solid ground in all directions
+    const directions = [
+      { dx: 1, dz: 0 }, { dx: -1, dz: 0 },
+      { dx: 0, dz: 1 }, { dx: 0, dz: -1 },
+      { dx: 1, dz: 1 }, { dx: -1, dz: -1 },
+      { dx: 1, dz: -1 }, { dx: -1, dz: 1 },
+    ];
+
+    for (const dir of directions) {
+      for (let dist = 1; dist <= 10; dist++) {
+        const pos = this.bot.entity.position;
+        const checkPos = new Vec3(
+          Math.floor(pos.x) + dir.dx * dist,
+          Math.floor(pos.y),
+          Math.floor(pos.z) + dir.dz * dist
+        );
+        
+        const groundBlock = this.bot.blockAt(checkPos.offset(0, -1, 0));
+        const feetBlock = this.bot.blockAt(checkPos);
+        const headBlock = this.bot.blockAt(checkPos.offset(0, 1, 0));
+        
+        // Found solid ground with air above
+        if (groundBlock && groundBlock.name !== 'air' && groundBlock.name !== 'water' &&
+            feetBlock && (feetBlock.name === 'air' || feetBlock.name === 'water') &&
+            headBlock && headBlock.name === 'air') {
+          
+          // Move towards it
+          const yaw = Math.atan2(-dir.dx, -dir.dz);
+          await this.bot.look(yaw, 0, false);
+          
+          this.bot.setControlState('forward', true);
+          this.bot.setControlState('jump', true); // Keep jumping in case still in water
+          await new Promise(resolve => setTimeout(resolve, dist * 300));
+          this.bot.clearControlStates();
+          
+          logger.info('[SHORE] Found shore!');
+          return 'Found shore';
+        }
+      }
+    }
+
+    return 'Could not find shore';
+  }
+
+  /**
+   * Jump spam escape - just jump repeatedly while moving forward
+   */
+  private async jumpSpamEscape(): Promise<string> {
+    if (!this.bot) return 'Bot not initialized';
+
+    const startPos = this.bot.entity.position.clone();
+    logger.info('[JUMP-SPAM] Attempting jump escape');
+
+    // Pick a random direction
+    const randomYaw = Math.random() * Math.PI * 2 - Math.PI;
+    await this.bot.look(randomYaw, 0, false);
+
+    // Spam jump while moving forward
+    this.bot.setControlState('forward', true);
+    
+    for (let i = 0; i < 10; i++) {
+      this.bot.setControlState('jump', true);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      this.bot.setControlState('jump', false);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    this.bot.clearControlStates();
+
+    const endPos = this.bot.entity.position;
+    const distMoved = startPos.distanceTo(endPos);
+    const heightGained = endPos.y - startPos.y;
+
+    if (distMoved > 3 || heightGained > 1) {
+      return `Jump escaped! Moved ${distMoved.toFixed(1)} blocks, height change: ${heightGained.toFixed(1)}`;
+    }
+
+    return 'Jump spam did not help';
+  }
+
+  /**
+   * Track move result and update stuck state
+   */
+  public trackMoveResult(success: boolean, result: string): void {
+    if (success) {
+      this.stuckState.consecutiveBlockedMoves = 0;
+      this.stuckState.lastSuccessfulMoveTime = Date.now();
+      
+      // Track position
+      if (this.bot) {
+        const pos = this.bot.entity.position;
+        this.stuckState.positionHistoryForStuck.push({
+          x: pos.x, y: pos.y, z: pos.z,
+          time: Date.now()
+        });
+        // Keep only last 10 positions
+        if (this.stuckState.positionHistoryForStuck.length > 10) {
+          this.stuckState.positionHistoryForStuck.shift();
+        }
+      }
+    } else {
+      // Check if it's a "all directions blocked" failure
+      if (result.includes('all directions blocked') || result.includes('Could not move')) {
+        this.stuckState.consecutiveBlockedMoves++;
+        logger.warn('[STUCK-TRACK] Consecutive blocked moves', { 
+          count: this.stuckState.consecutiveBlockedMoves 
+        });
+      }
+    }
+  }
+
+  /**
+   * Check if we're stuck and need recovery
+   */
+  public isStuck(): boolean {
+    // Check for consecutive blocked moves
+    if (this.stuckState.consecutiveBlockedMoves >= 2) {
+      logger.warn('[STUCK-CHECK] Stuck due to consecutive blocked moves');
+      return true;
+    }
+
+    // Check if we haven't moved successfully in a while
+    const timeSinceSuccess = Date.now() - this.stuckState.lastSuccessfulMoveTime;
+    if (timeSinceSuccess > this.STUCK_THRESHOLD_MS) {
+      // Also check if we've actually moved (position history)
+      if (this.stuckState.positionHistoryForStuck.length >= 2) {
+        const oldest = this.stuckState.positionHistoryForStuck[0];
+        const newest = this.stuckState.positionHistoryForStuck[this.stuckState.positionHistoryForStuck.length - 1];
+        const dist = Math.sqrt(
+          Math.pow(newest.x - oldest.x, 2) + 
+          Math.pow(newest.z - oldest.z, 2)
+        );
+        if (dist < 2) { // Haven't moved more than 2 blocks in 30s
+          logger.warn('[STUCK-CHECK] Stuck due to no movement');
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Get stuck state for AI context
+   */
+  public getStuckInfo(): { isStuck: boolean; blockedMoves: number; inWater: boolean; inRecovery: boolean } {
+    const inWater = this.bot ? 
+      (this.bot.blockAt(this.bot.entity.position)?.name === 'water') : false;
+    
+    return {
+      isStuck: this.isStuck(),
+      blockedMoves: this.stuckState.consecutiveBlockedMoves,
+      inWater,
+      inRecovery: this.stuckState.isInRecoveryMode
+    };
+  }
+
+  /**
+   * Reset stuck state after successful recovery
+   */
+  private resetStuckState(): void {
+    this.stuckState.consecutiveBlockedMoves = 0;
+    this.stuckState.currentRecoveryAttempts = 0;
+    this.stuckState.isInRecoveryMode = false;
+    this.stuckState.lastSuccessfulMoveTime = Date.now();
+    
+    // Re-enable idle looking after recovery
+    this.isNavigating = false;
+    this.humanBehavior?.notifyTaskEnd();
+    
+    logger.info('[STUCK-RECOVERY] State reset - recovery complete');
   }
 
   /**
@@ -1986,9 +3060,24 @@ export class MinecraftGame {
             }
           }
 
-          // All alternatives failed
-          logger.warn(`[DIR-WALK-${sessionId}] All directions blocked`);
-          return `Could not move ${label} - all directions blocked (try mining through obstacles)`;
+          // All pathfinder alternatives failed - try manual walk with jump as last resort
+          logger.info(`[DIR-WALK-${sessionId}] Pathfinder blocked, trying manual walk...`);
+          
+          const manualResult = await this.manualWalkWithJump(yaw, label, sessionId);
+          if (manualResult.moved > 2) {
+            logger.info(`[DIR-WALK-${sessionId}] ✓ Manual walk succeeded`, { moved: manualResult.moved.toFixed(1) });
+            return `Manually walked ${label} - moved ${manualResult.moved.toFixed(1)} blocks`;
+          }
+          
+          // All alternatives failed - track for stuck detection
+          logger.warn(`[DIR-WALK-${sessionId}] All directions blocked (pathfinder + manual)`);
+          this.trackMoveResult(false, 'all directions blocked');
+          
+          // If we're stuck, suggest recovery
+          if (this.stuckState.consecutiveBlockedMoves >= 2) {
+            return `STUCK! All directions blocked ${this.stuckState.consecutiveBlockedMoves}x - use 'recover' action to escape`;
+          }
+          return `Could not move ${label} - all directions blocked (try 'recover' action if stuck)`;
         }
       }
 
@@ -1998,6 +3087,61 @@ export class MinecraftGame {
       logger.error(`[DIR-WALK-${sessionId}] ✗ FAILED`, { error, direction: label });
       return `Failed to walk ${label}: ${error}`;
     }
+  }
+
+  /**
+   * Manual walk with jump - fallback when pathfinder fails
+   * Tries to walk forward while jumping, can escape some edge cases like water edges
+   */
+  private async manualWalkWithJump(yaw: number, label: string, sessionId: number): Promise<{ moved: number; result: string }> {
+    if (!this.bot) return { moved: 0, result: 'Bot not initialized' };
+
+    const startPos = this.bot.entity.position.clone();
+    
+    // Look in the target direction
+    await this.bot.look(yaw, 0, false);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Walk forward with jump for 2 seconds
+    this.bot.setControlState('forward', true);
+    
+    const walkDuration = 2000;
+    const jumpInterval = 300;
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < walkDuration) {
+      // Jump periodically
+      this.bot.setControlState('jump', true);
+      await new Promise(resolve => setTimeout(resolve, 150));
+      this.bot.setControlState('jump', false);
+      await new Promise(resolve => setTimeout(resolve, jumpInterval - 150));
+      
+      // Check if we're moving
+      const currentPos = this.bot.entity.position;
+      const moved = startPos.distanceTo(currentPos);
+      
+      // If we've made good progress, we're out
+      if (moved > 3) {
+        break;
+      }
+    }
+
+    this.bot.clearControlStates();
+    
+    const endPos = this.bot.entity.position;
+    const moved = startPos.distanceTo(endPos);
+    
+    logger.info(`[MANUAL-WALK-${sessionId}] Manual walk result`, { 
+      direction: label, 
+      moved: moved.toFixed(1),
+      from: `(${startPos.x.toFixed(1)}, ${startPos.y.toFixed(1)}, ${startPos.z.toFixed(1)})`,
+      to: `(${endPos.x.toFixed(1)}, ${endPos.y.toFixed(1)}, ${endPos.z.toFixed(1)})`
+    });
+
+    if (moved > 2) {
+      return { moved, result: `Walked ${moved.toFixed(1)} blocks ${label}` };
+    }
+    return { moved, result: `Manual walk only moved ${moved.toFixed(1)} blocks` };
   }
 
   /**
@@ -3204,7 +4348,7 @@ export class MinecraftGame {
           distance: rememberedTable.distance.toFixed(1)
         });
         // Try to find it in the world at that position
-        const blockAtPos = this.bot.blockAt(new (require('vec3'))(
+        const blockAtPos = this.bot.blockAt(new Vec3(
           rememberedTable.position.x,
           rememberedTable.position.y,
           rememberedTable.position.z
@@ -3226,7 +4370,7 @@ export class MinecraftGame {
         
         // Navigate to the crafting table
         try {
-          const { Movements, goals } = require('mineflayer-pathfinder');
+          // Movements and goals already imported from pathfinder at top of file
           const movements = new Movements(this.bot);
           movements.canDig = false;  // Don't dig to reach crafting table
           this.bot.pathfinder.setMovements(movements);
@@ -3302,6 +4446,15 @@ export class MinecraftGame {
               durationMs: elapsed
             });
             
+            // Emit craft callback for UI notification
+            if (this.onItemCraftCallback && gained > 0) {
+              const displayName = itemNameNormalized.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+              this.onItemCraftCallback(itemNameNormalized, displayName, gained);
+            }
+            
+            // Notify UI of inventory change
+            this.notifyStateChange();
+            
             return `Crafted ${itemNameNormalized} (now have ${afterCount})`;
           } catch (error: any) {
             logger.error('[CRAFT-HUMAN] Workbench craft failed', { error: error.message, item: itemNameNormalized });
@@ -3349,6 +4502,15 @@ export class MinecraftGame {
           totalNow: afterCount,
           durationMs: elapsed
         });
+        
+        // Emit craft callback for UI notification
+        if (this.onItemCraftCallback && gained > 0) {
+          const displayName = itemNameNormalized.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          this.onItemCraftCallback(itemNameNormalized, displayName, gained);
+        }
+        
+        // Notify UI of inventory change
+        this.notifyStateChange();
         
         return `Crafted ${itemNameNormalized} (now have ${afterCount})`;
       } catch (error: any) {
@@ -5299,7 +6461,7 @@ ${aiAnalysis}
   /**
    * Get time of day
    */
-  private getTimeOfDay(): string {
+  public getTimeOfDay(): string {
     if (!this.bot) return 'unknown';
 
     const time = this.bot.time.timeOfDay;
@@ -5519,6 +6681,13 @@ ${aiAnalysis}
   }
 
   /**
+   * Register a callback for item crafts (for UI notifications)
+   */
+  onItemCraft(callback: (itemName: string, displayName: string, count: number) => void): void {
+    this.onItemCraftCallback = callback;
+  }
+
+  /**
    * Register a callback for when the bot dies
    */
   onDeath(callback: () => void): void {
@@ -5530,6 +6699,128 @@ ${aiAnalysis}
    */
   onRespawn(callback: () => void): void {
     this.onRespawnCallback = callback;
+  }
+
+  /**
+   * Register a callback for when bot is under attack (taking rapid damage)
+   * This should trigger immediate survival response in the AI
+   */
+  onUnderAttack(callback: (damage: number, health: number, attacker?: string) => void): void {
+    this.onUnderAttackCallback = callback;
+  }
+
+  /**
+   * Register a callback for state changes (health, inventory) for immediate UI updates
+   */
+  onStateChange(callback: () => void): void {
+    this.onStateChangeCallback = callback;
+  }
+
+  /**
+   * Trigger state change callback (call this when important state changes)
+   */
+  private notifyStateChange(): void {
+    if (this.onStateChangeCallback) {
+      this.onStateChangeCallback();
+    }
+  }
+
+  /**
+   * Calculate total damage taken in the last N milliseconds
+   */
+  private calculateRecentDamage(windowMs: number): number {
+    const now = Date.now();
+    const recentEntries = this.healthHistory.filter(h => now - h.time <= windowMs);
+    if (recentEntries.length < 2) return 0;
+    
+    const oldest = recentEntries[0];
+    const newest = recentEntries[recentEntries.length - 1];
+    return Math.max(0, oldest.health - newest.health);
+  }
+
+  /**
+   * Get nearby hostile mobs with distance info
+   */
+  private getNearbyHostileMobs(maxDistance: number = 10): { name: string; distance: number; position: Vec3 }[] {
+    if (!this.bot) return [];
+    
+    const hostileMobs = ['zombie', 'skeleton', 'creeper', 'spider', 'enderman', 'witch', 
+                         'phantom', 'drowned', 'husk', 'stray', 'pillager', 'vindicator',
+                         'ravager', 'evoker', 'vex', 'blaze', 'ghast', 'wither_skeleton'];
+    
+    const hostiles: { name: string; distance: number; position: Vec3 }[] = [];
+    
+    Object.values(this.bot.entities).forEach(entity => {
+      if (entity.type === 'mob' && entity.name && entity.position) {
+        const nameLower = entity.name.toLowerCase();
+        if (hostileMobs.some(h => nameLower.includes(h))) {
+          const dist = this.bot!.entity.position.distanceTo(entity.position);
+          if (dist <= maxDistance) {
+            hostiles.push({
+              name: entity.name,
+              distance: dist,
+              position: entity.position.clone(),
+            });
+          }
+        }
+      }
+    });
+    
+    // Sort by distance (closest first)
+    return hostiles.sort((a, b) => a.distance - b.distance);
+  }
+
+  /**
+   * Check if bot is currently under attack
+   */
+  isCurrentlyUnderAttack(): boolean {
+    return this.isUnderAttack;
+  }
+
+  /**
+   * Check if emergency flee was requested due to health danger
+   */
+  shouldEmergencyFlee(): boolean {
+    return this.emergencyFleeRequested;
+  }
+
+  /**
+   * Clear emergency flee flag after responding to it
+   */
+  clearEmergencyFlee(): void {
+    this.emergencyFleeRequested = false;
+  }
+
+  /**
+   * Get current attacker name if known
+   */
+  getAttackerName(): string | null {
+    return this.attackerName;
+  }
+
+  /**
+   * Get health alert info for AI context
+   */
+  getHealthAlertInfo(): { 
+    isUnderAttack: boolean; 
+    recentDamage: number; 
+    currentHealth: number;
+    attacker: string | null;
+    emergencyFlee: boolean;
+    nearbyHostiles: { name: string; distance: number }[];
+    isEnvironmentalDamage: boolean;
+    damageSource: string;
+  } {
+    return {
+      isUnderAttack: this.isUnderAttack,
+      recentDamage: this.calculateRecentDamage(5000),
+      currentHealth: this.bot?.health ?? 20,
+      attacker: this.attackerName,
+      emergencyFlee: this.emergencyFleeRequested,
+      nearbyHostiles: this.getNearbyHostileMobs(10).map(h => ({ name: h.name, distance: h.distance })),
+      isEnvironmentalDamage: this.isEnvironmentalDamage,
+      damageSource: this.damageSource,
+    };
   }
 
   /**

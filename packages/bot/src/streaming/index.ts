@@ -15,6 +15,7 @@ export { TwitchClient, type TwitchConfig, type TwitchChatMessage, type TwitchSub
 export { XClient, type XConfig, type XMention } from './x-client.js';
 export { ChatManager, ChatPriority, type ChatManagerConfig, type PrioritizedMessage, chatManager } from './chat-manager.js';
 export { ChatResponder, type ChatResponderConfig } from './chat-responder.js';
+export { chatCommands, ChatCommandHandler } from '../chat-commands.js';
 
 import { Logger } from '@tau/shared';
 import { TwitchClient, TwitchConfig } from './twitch-client.js';
@@ -69,7 +70,56 @@ export async function initializeStreaming(
       twitchClient = new TwitchClient(config.twitch);
       await twitchClient.connect();
       chatManager.attachTwitch(twitchClient);
-      logger.info('Twitch integration initialized');
+      
+      // Wire up Twitch events to WebSocket for frontend display
+      twitchClient.on('chat', (msg: any) => {
+        // Broadcast every chat message to frontend
+        wsServer.broadcastViewerChat({
+          id: msg.id || Date.now().toString(),
+          username: msg.username,
+          displayName: msg.username,
+          message: msg.message,
+          platform: 'twitch',
+          badges: {
+            subscriber: msg.isSubscriber,
+            moderator: msg.isModerator,
+          },
+          bits: msg.bits,
+        });
+      });
+
+      twitchClient.on('subscription', (sub: any) => {
+        wsServer.broadcastDonationAlert({
+          type: sub.isGift ? 'gift' : 'subscription',
+          username: sub.username,
+          displayName: sub.username,
+          amount: parseInt(sub.tier) || 1000,
+          message: sub.message,
+          months: sub.months,
+          giftCount: sub.giftCount,
+        });
+      });
+
+      twitchClient.on('bits', (bits: any) => {
+        wsServer.broadcastDonationAlert({
+          type: 'bits',
+          username: bits.username,
+          displayName: bits.username,
+          amount: bits.amount,
+          message: bits.message,
+        });
+      });
+
+      twitchClient.on('raid', (raid: any) => {
+        wsServer.broadcastDonationAlert({
+          type: 'raid',
+          username: raid.fromChannel,
+          displayName: raid.fromChannel,
+          viewerCount: raid.viewerCount,
+        });
+      });
+      
+      logger.info('Twitch integration initialized with frontend broadcast');
     } catch (error) {
       logger.error('Failed to initialize Twitch', { error });
     }
