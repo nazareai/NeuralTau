@@ -2,7 +2,7 @@
 
 Human-like AI Minecraft player and streamer with auto-learning to achieve realistic perception and behavior.
 
-**TWITCH**: [https://twitch.com/neuraltau]https://twitch.com/neuraltau
+**TWITCH**: https://twitch.com/neuraltau
 
 ## Features
 
