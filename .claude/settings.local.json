@@ -12,7 +12,12 @@
       "Bash(pnpm --filter @tau/web build:*)",
       "Bash(pnpm --filter @tau/shared build:*)",
       "Bash(git checkout:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
