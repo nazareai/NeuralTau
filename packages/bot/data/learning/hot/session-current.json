@@ -1,0 +1,1580 @@
+{
+  "version": 1,
+  "sessionId": "session-1767460046372",
+  "startTime": 1767460046372,
+  "lastFlush": 1767469211546,
+  "entries": [
+    {
+      "ts": 1767468167193,
+      "action": {
+        "type": "dig_up",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -116,
+          22,
+          0
+        ],
+        "hp": 6.333333969116211,
+        "fd": 11,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "water"
+        ],
+        "ent": [],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 15186,
+      "reason": "escape underground: low HP, night shelter, no wood",
+      "errorMsg": "Stuck in vertical shaft at Y=16. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+    },
+    {
+      "ts": 1767468200022,
+      "action": {
+        "type": "mine",
+        "target": "nearby"
+      },
+      "ctx": {
+        "pos": [
+          -126,
+          12,
+          15
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "diorite",
+          "stone",
+          "water",
+          "iron_ore",
+          "coal_ore"
+        ],
+        "ent": [
+          "bat"
+        ],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 8004,
+      "errorMsg": "Unknown block type: nearby"
+    },
+    {
+      "ts": 1767468230018,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -126,
+          12,
+          15
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "diorite",
+          "stone",
+          "water",
+          "iron_ore",
+          "coal_ore"
+        ],
+        "ent": [],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 18007,
+      "errorMsg": "Action timed out after 10002ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468244227,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -126,
+          12,
+          15
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "diorite",
+          "stone",
+          "water",
+          "iron_ore",
+          "coal_ore"
+        ],
+        "ent": [],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 12220
+    },
+    {
+      "ts": 1767468260008,
+      "action": {
+        "type": "mine",
+        "target": "nearby"
+      },
+      "ctx": {
+        "pos": [
+          -123,
+          12,
+          15
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "water",
+          "diorite",
+          "stone",
+          "iron_ore",
+          "coal_ore"
+        ],
+        "ent": [],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 8003,
+      "errorMsg": "Unknown block type: nearby"
+    },
+    {
+      "ts": 1767468291608,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -123,
+          12,
+          15
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "water",
+          "diorite",
+          "stone",
+          "iron_ore",
+          "coal_ore"
+        ],
+        "ent": [],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 19597,
+      "errorMsg": "east was blocked, moved -45° instead - Pathfinder couldn't reach east (-45°) - moved 13.0 blocks, 5.7 remaining"
+    },
+    {
+      "ts": 1767468307296,
+      "action": {
+        "type": "dig_up",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -121,
+          18,
+          4
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "andesite",
+          "glow_lichen",
+          "granite",
+          "stone",
+          "water"
+        ],
+        "ent": [],
+        "time": "dusk",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 15284,
+      "reason": "CRITICAL_HP_FLEE_NOW underground escape Y=18 no wood",
+      "errorMsg": "Stuck in vertical shaft at Y=9. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+    },
+    {
+      "ts": 1767468320029,
+      "action": {
+        "type": "mine",
+        "target": "nearby"
+      },
+      "ctx": {
+        "pos": [
+          -133,
+          5,
+          7
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "water",
+          "stone",
+          "deepslate",
+          "diorite",
+          "deepslate_lapis_ore"
+        ],
+        "ent": [
+          "bat"
+        ],
+        "time": "night",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 8004,
+      "errorMsg": "Unknown block type: nearby"
+    },
+    {
+      "ts": 1767468350080,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -133,
+          5,
+          7
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "water",
+          "stone",
+          "deepslate",
+          "diorite",
+          "deepslate_lapis_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 18011,
+      "errorMsg": "Action timed out after 10001ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468370052,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -133,
+          5,
+          7
+        ],
+        "hp": 4.333333969116211,
+        "fd": 10,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "water",
+          "stone",
+          "deepslate",
+          "diorite",
+          "deepslate_lapis_ore"
+        ],
+        "ent": [
+          "bat"
+        ],
+        "time": "night",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 18005,
+      "errorMsg": "Action timed out after 10001ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468383024,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -124,
+          13,
+          7
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "stone",
+          "water",
+          "andesite",
+          "granite",
+          "diorite"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 11011
+    },
+    {
+      "ts": 1767468407526,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -124,
+          13,
+          7
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "stone",
+          "water",
+          "andesite",
+          "granite",
+          "diorite"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 15510,
+      "errorMsg": "Pathfinder couldn't reach east - moved 7.4 blocks, 6.9 remaining"
+    },
+    {
+      "ts": 1767468426566,
+      "action": {
+        "type": "dig_up",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -120,
+          16,
+          3
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "iron_ore",
+          "water",
+          "granite"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 14542,
+      "reason": "CRITICAL_HP_FLEE_NOW underground escape to surface",
+      "errorMsg": "Stuck in vertical shaft at Y=5. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+    },
+    {
+      "ts": 1767468446759,
+      "action": {
+        "type": "move",
+        "target": "south"
+      },
+      "ctx": {
+        "pos": [
+          -134,
+          5,
+          7
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "water",
+          "deepslate",
+          "stone",
+          "diorite",
+          "deepslate_lapis_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": false,
+      "durationMs": 14734,
+      "errorMsg": "south was blocked, moved +45° instead - Pathfinder couldn't reach south (+45°) - moved 5.6 blocks, 8.3 remaining"
+    },
+    {
+      "ts": 1767468463034,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -136,
+          11,
+          13
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe"
+        ],
+        "blk": [
+          "andesite",
+          "stone",
+          "diorite",
+          "dirt",
+          "water"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 11009
+    },
+    {
+      "ts": 1767468483064,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -139,
+          13,
+          12
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "coal_ore",
+          "diorite",
+          "iron_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 11014
+    },
+    {
+      "ts": 1767468503051,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -139,
+          13,
+          12
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "coal_ore",
+          "diorite",
+          "iron_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 11014
+    },
+    {
+      "ts": 1767468523049,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -139,
+          13,
+          12
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "coal_ore",
+          "diorite",
+          "iron_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 11013
+    },
+    {
+      "ts": 1767468549182,
+      "action": {
+        "type": "dig_up",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -139,
+          13,
+          12
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "coal_ore",
+          "diorite",
+          "iron_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 17118,
+      "reason": "CRITICAL_HP_FLEE_NOW underground Y=13 escape to surface"
+    },
+    {
+      "ts": 1767468562435,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -139,
+          14,
+          12
+        ],
+        "hp": 4.333333969116211,
+        "fd": 9,
+        "inv": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "blk": [
+          "stone",
+          "andesite",
+          "dirt",
+          "diorite",
+          "iron_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": true
+      },
+      "success": true,
+      "durationMs": 10407
+    },
+    {
+      "ts": 1767468584377,
+      "action": {
+        "type": "move",
+        "target": "west"
+      },
+      "ctx": {
+        "pos": [
+          -57,
+          80,
+          -51
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "oak_leaves",
+          "oak_log"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 10740,
+      "reason": "night: approach tree 16m west for wood/shelter"
+    },
+    {
+      "ts": 1767468599449,
+      "action": {
+        "type": "move",
+        "target": "north"
+      },
+      "ctx": {
+        "pos": [
+          -64,
+          75,
+          -56
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "oak_leaves",
+          "coal_ore"
+        ],
+        "ent": [],
+        "time": "night",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 6834,
+      "reason": "Night: approach tree 11m north for wood first"
+    },
+    {
+      "ts": 1767468632404,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -64,
+          72,
+          -64
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "birch_leaves",
+          "grass"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 19769,
+      "reason": "mine tree 7m north for wood",
+      "errorMsg": "Action timed out after 15016ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468668086,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -64,
+          72,
+          -64
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "birch_leaves",
+          "grass"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 55451,
+      "errorMsg": "Action timed out after 15486ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468672809,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -64,
+          72,
+          -64
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "birch_leaves",
+          "grass"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 60174,
+      "errorMsg": "Cannot mine - mining already in progress"
+    },
+    {
+      "ts": 1767468699392,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -60,
+          65,
+          -85
+        ],
+        "hp": 20,
+        "fd": 19,
+        "inv": [
+          "rotten_flesh"
+        ],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "oak_log",
+          "oak_leaves",
+          "stone"
+        ],
+        "ent": [
+          "item"
+        ],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 6582
+    },
+    {
+      "ts": 1767468727831,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -60,
+          65,
+          -85
+        ],
+        "hp": 20,
+        "fd": 19,
+        "inv": [
+          "rotten_flesh"
+        ],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "oak_log",
+          "oak_leaves",
+          "stone"
+        ],
+        "ent": [
+          "item"
+        ],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 35021,
+      "errorMsg": "Action timed out after 15004ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468732899,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -60,
+          65,
+          -85
+        ],
+        "hp": 20,
+        "fd": 19,
+        "inv": [
+          "rotten_flesh"
+        ],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "oak_log",
+          "oak_leaves",
+          "stone"
+        ],
+        "ent": [
+          "item"
+        ],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 40089,
+      "errorMsg": "Cannot mine - mining already in progress"
+    },
+    {
+      "ts": 1767468759425,
+      "action": {
+        "type": "craft",
+        "target": "oak_planks"
+      },
+      "ctx": {
+        "pos": [
+          -46,
+          71,
+          -67
+        ],
+        "hp": 20,
+        "fd": 16,
+        "inv": [
+          "rotten_flesh",
+          "oak_log"
+        ],
+        "blk": [
+          "dirt",
+          "grass_block",
+          "oak_leaves",
+          "oak_log",
+          "birch_leaves"
+        ],
+        "ent": [
+          "item"
+        ],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 6177,
+      "reason": "Have log, craft planks for table/tools - stop mining loop"
+    },
+    {
+      "ts": 1767468777624,
+      "action": {
+        "type": "craft",
+        "target": "oak_planks"
+      },
+      "ctx": {
+        "pos": [
+          -46,
+          71,
+          -67
+        ],
+        "hp": 20,
+        "fd": 16,
+        "inv": [
+          "rotten_flesh",
+          "oak_log"
+        ],
+        "blk": [
+          "dirt",
+          "grass_block",
+          "oak_leaves",
+          "oak_log",
+          "birch_leaves"
+        ],
+        "ent": [
+          "item"
+        ],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 24376,
+      "errorMsg": "Action timed out after 5005ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468797447,
+      "action": {
+        "type": "craft",
+        "target": "oak_planks"
+      },
+      "ctx": {
+        "pos": [
+          -46,
+          71,
+          -67
+        ],
+        "hp": 20,
+        "fd": 16,
+        "inv": [
+          "rotten_flesh",
+          "oak_log"
+        ],
+        "blk": [
+          "dirt",
+          "grass_block",
+          "oak_leaves",
+          "oak_log",
+          "birch_leaves"
+        ],
+        "ent": [
+          "item"
+        ],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 44199,
+      "errorMsg": "Action timed out after 5003ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468819476,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -48,
+          61,
+          -64
+        ],
+        "hp": 20,
+        "fd": 16,
+        "inv": [
+          "oak_planks",
+          "rotten_flesh"
+        ],
+        "blk": [
+          "stone",
+          "grass_block",
+          "water",
+          "dirt",
+          "gravel"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 6720
+    },
+    {
+      "ts": 1767468842486,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -46,
+          57,
+          -68
+        ],
+        "hp": 20,
+        "fd": 16,
+        "inv": [
+          "oak_planks",
+          "rotten_flesh"
+        ],
+        "blk": [
+          "stone",
+          "dirt",
+          "grass_block",
+          "water",
+          "gravel"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 10001,
+      "errorMsg": "Action timed out after 10001ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468863727,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -61,
+          84,
+          -51
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "oak_leaves"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 9549,
+      "reason": "approaching tree 10m east for wood"
+    },
+    {
+      "ts": 1767468880445,
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "ctx": {
+        "pos": [
+          -53,
+          75,
+          -51
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "oak_leaves"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 7405,
+      "reason": "tree 8m east visible, mine for wood now",
+      "errorMsg": "Cannot reach oak_log (6.3 blocks away - need to be within 5.5)"
+    },
+    {
+      "ts": 1767468899481,
+      "action": {
+        "type": "move",
+        "target": "north"
+      },
+      "ctx": {
+        "pos": [
+          -51,
+          74,
+          -52
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "copper_ore",
+          "grass"
+        ],
+        "ent": [],
+        "time": "dawn",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 6233,
+      "reason": "approaching tree 17m north for wood",
+      "errorMsg": "Pathfinder couldn't reach north - moved 7.8 blocks, 2.5 remaining"
+    },
+    {
+      "ts": 1767468923897,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -51,
+          72,
+          -60
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "grass",
+          "oak_log"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 10736,
+      "reason": "approaching tree 11m east for wood"
+    },
+    {
+      "ts": 1767468937128,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -42,
+          57,
+          -59
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "water",
+          "stone",
+          "diorite",
+          "dirt"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 4409
+    },
+    {
+      "ts": 1767468962917,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -40,
+          57,
+          -58
+        ],
+        "hp": 13.166667938232422,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "water",
+          "stone",
+          "diorite",
+          "gravel",
+          "dirt"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 10137,
+      "errorMsg": "Action timed out after 10137ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767468978648,
+      "action": {
+        "type": "move",
+        "target": "north"
+      },
+      "ctx": {
+        "pos": [
+          -71,
+          78,
+          -42
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "stone",
+          "dirt",
+          "grass_block"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 5728,
+      "reason": "approaching tree 12m north for wood"
+    },
+    {
+      "ts": 1767468999429,
+      "action": {
+        "type": "move",
+        "target": "north"
+      },
+      "ctx": {
+        "pos": [
+          -71,
+          76,
+          -50
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "coal_ore",
+          "stone",
+          "dirt",
+          "grass_block",
+          "grass"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 6617,
+      "reason": "approaching tree 19m north for wood"
+    },
+    {
+      "ts": 1767469022831,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -71,
+          74,
+          -58
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "stone",
+          "coal_ore",
+          "dirt",
+          "grass_block",
+          "oak_leaves"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 9940
+    },
+    {
+      "ts": 1767469042553,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -69,
+          74,
+          -58
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [
+          "dirt"
+        ],
+        "blk": [
+          "stone",
+          "coal_ore",
+          "dirt",
+          "grass_block",
+          "oak_leaves"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 9523,
+      "reason": "explore for trees, avoid repeating north moves"
+    },
+    {
+      "ts": 1767469060511,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -61,
+          74,
+          -58
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [
+          "dirt"
+        ],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "coal_ore",
+          "stone",
+          "grass"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 7450,
+      "reason": "approaching tree 15m east for wood"
+    },
+    {
+      "ts": 1767469081570,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -53,
+          72,
+          -58
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [
+          "dirt"
+        ],
+        "blk": [
+          "dirt",
+          "stone",
+          "grass_block",
+          "grass",
+          "oak_log"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 8504
+    },
+    {
+      "ts": 1767469100750,
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "ctx": {
+        "pos": [
+          -51,
+          72,
+          -58
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [
+          "dirt"
+        ],
+        "blk": [
+          "grass_block",
+          "dirt",
+          "stone",
+          "grass",
+          "oak_log"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 7687,
+      "reason": "approaching tree 13m east for wood",
+      "errorMsg": "Pathfinder couldn't reach east - moved 6.6 blocks, 3.4 remaining"
+    },
+    {
+      "ts": 1767469122716,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -41,
+          62,
+          -57
+        ],
+        "hp": 20,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "water",
+          "stone",
+          "dirt",
+          "copper_ore",
+          "diorite"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 10002,
+      "errorMsg": "Action timed out after 10001ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767469143320,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -43,
+          60,
+          -58
+        ],
+        "hp": 16.666667938232422,
+        "fd": 20,
+        "inv": [],
+        "blk": [
+          "water",
+          "stone",
+          "dirt",
+          "diorite"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 10425,
+      "errorMsg": "Action timed out after 10425ms - continuing to next cycle (action may still be running)"
+    },
+    {
+      "ts": 1767469182030,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -41,
+          53,
+          -60
+        ],
+        "hp": 15.333334922790527,
+        "fd": 17,
+        "inv": [],
+        "blk": [
+          "granite",
+          "stone",
+          "water",
+          "dirt",
+          "gravel"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": true,
+      "durationMs": 9101
+    },
+    {
+      "ts": 1767469203021,
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "ctx": {
+        "pos": [
+          -36,
+          57,
+          -48
+        ],
+        "hp": 15.333334922790527,
+        "fd": 17,
+        "inv": [],
+        "blk": [
+          "water",
+          "stone",
+          "diorite",
+          "gravel",
+          "dirt"
+        ],
+        "ent": [],
+        "time": "day",
+        "underground": false
+      },
+      "success": false,
+      "durationMs": 10002,
+      "errorMsg": "Action timed out after 10001ms - continuing to next cycle (action may still be running)"
+    }
+  ]
+}

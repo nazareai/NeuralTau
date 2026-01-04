@@ -368,7 +368,8 @@ export default function Dashboard() {
   const [testTimer, setTestTimer] = useState<{ active: boolean; startTime: number; duration: number }>({ active: false, startTime: 0, duration: 5 * 60 * 1000 }); // 5 minutes
   const [timerDisplay, setTimerDisplay] = useState('5:00');
   const [activity, setActivity] = useState<{ type: string; item?: string; active: boolean }>({ type: 'idle', active: false });
-  const [heldItem, setHeldItem] = useState<{ name: string | null; displayName: string | null; action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' }>({ name: null, displayName: null, action: 'idle' });
+  const [heldItem, setHeldItem] = useState<{ name: string | null; displayName: string | null; action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' | 'crafting' }>({ name: null, displayName: null, action: 'idle' });
+  const [heldItemImageError, setHeldItemImageError] = useState(false); // Track if held item image failed to load
   const [viewerPort, setViewerPort] = useState(3007);
   const [itemPickups, setItemPickups] = useState<{ id: number; itemName: string; displayName: string; count: number }[]>([]);
   const [itemCrafts, setItemCrafts] = useState<{ id: number; itemName: string; displayName: string; count: number }[]>([]);
@@ -415,6 +416,13 @@ export default function Dashboard() {
   
   // Milestone celebration
   const [milestone, setMilestone] = useState<{ text: string; type: 'tool' | 'achievement' | 'death' } | null>(null);
+
+  // Damage flash effect
+  const [damageFlash, setDamageFlash] = useState<{ amount: number; source: string; isCritical: boolean } | null>(null);
+
+  // Mining progress
+  const [miningProgress, setMiningProgress] = useState<{ blockName: string; displayName: string; progress: number; isComplete: boolean } | null>(null);
+
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [musicVolume, setMusicVolume] = useState(0.10); // 10% volume for background music
@@ -490,7 +498,7 @@ export default function Dashboard() {
   };
 
   // Music player - using a global audio element to avoid React closure issues
-  const MUSIC_TRACKS = ['/music/1.mp3', '/music/2.mp3', '/music/3.mp3', '/music/4.mp3'];
+  const MUSIC_TRACKS = ['/music/1.mp3', '/music/2.mp3', '/music/3.mp3', '/music/4.mp3', '/music/5.mp3', '/music/6.mp3', '/music/7.mp3', '/music/8.mp3'];
   const musicIndexRef = useRef(0);
 
   const startMusic = () => {
@@ -515,13 +523,23 @@ export default function Dashboard() {
     };
     
     audio.onended = () => {
-      musicIndexRef.current = (musicIndexRef.current + 1) % MUSIC_TRACKS.length;
+      // Shuffle: pick a random track (different from current if possible)
+      let nextIndex = Math.floor(Math.random() * MUSIC_TRACKS.length);
+      if (MUSIC_TRACKS.length > 1 && nextIndex === musicIndexRef.current) {
+        nextIndex = (nextIndex + 1) % MUSIC_TRACKS.length;
+      }
+      musicIndexRef.current = nextIndex;
       playTrack(musicIndexRef.current);
     };
     
     audio.onerror = () => {
       console.error('[MUSIC] Error, trying next');
-      musicIndexRef.current = (musicIndexRef.current + 1) % MUSIC_TRACKS.length;
+      // On error, also shuffle to a different random track
+      let nextIndex = Math.floor(Math.random() * MUSIC_TRACKS.length);
+      if (MUSIC_TRACKS.length > 1 && nextIndex === musicIndexRef.current) {
+        nextIndex = (nextIndex + 1) % MUSIC_TRACKS.length;
+      }
+      musicIndexRef.current = nextIndex;
       playTrack(musicIndexRef.current);
     };
     
@@ -641,6 +659,7 @@ export default function Dashboard() {
 
         case 'heldItem':
           setHeldItem(message.data);
+          setHeldItemImageError(false); // Reset error state for new item
           break;
 
         case 'itemPickup':
@@ -750,6 +769,44 @@ export default function Dashboard() {
           // Queue audio for playback
           audioQueueRef.current.push(audioData);
           playNextAudio();
+          break;
+
+        case 'damage':
+          // Show damage flash effect
+          console.log('[DAMAGE] Damage event:', message.data);
+          setDamageFlash({
+            amount: message.data.amount,
+            source: message.data.source,
+            isCritical: message.data.isCritical,
+          });
+          // Clear flash after animation (500ms)
+          setTimeout(() => setDamageFlash(null), 500);
+          break;
+
+        case 'miningProgress':
+          // Show mining progress bar
+          if (message.data.isComplete) {
+            // Show complete briefly then hide
+            setMiningProgress({
+              blockName: message.data.blockName,
+              displayName: message.data.displayName,
+              progress: 100,
+              isComplete: true,
+            });
+            setTimeout(() => setMiningProgress(null), 300);
+          } else {
+            setMiningProgress({
+              blockName: message.data.blockName,
+              displayName: message.data.displayName,
+              progress: message.data.progress,
+              isComplete: false,
+            });
+          }
+          break;
+
+        case 'craftingProgress':
+          // Handle crafting stages
+          console.log('[CRAFTING] Progress:', message.data);
           break;
       }
     };
@@ -1529,6 +1586,13 @@ export default function Dashboard() {
           100% { transform: translateY(0) scale(1); }
         }
 
+        @keyframes itemCraft {
+          0%, 100% { transform: rotate(0deg) translateY(0); }
+          25% { transform: rotate(-20deg) translateY(-5px); }
+          50% { transform: rotate(15deg) translateY(5px); }
+          75% { transform: rotate(-10deg) translateY(-3px); }
+        }
+
         @keyframes avatarTalk {
           0% { transform: scaleY(1) scaleX(1); }
           100% { transform: scaleY(0.97) scaleX(1.01); }
@@ -1547,6 +1611,18 @@ export default function Dashboard() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        @keyframes damageFlash {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+
+        @keyframes damageText {
+          0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+          20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+          40% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+          100% { transform: translate(-50%, -60%) scale(0.8); opacity: 0; }
         }
 
         ::-webkit-scrollbar { width: 10px; }
@@ -2034,12 +2110,121 @@ export default function Dashboard() {
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: minecraftState.time === 'night' 
+              background: minecraftState.time === 'night'
                 ? 'rgba(2, 5, 15, 0.8)'
                 : 'rgba(10, 8, 25, 0.55)',
               pointerEvents: 'none',
               transition: 'background 2s ease',
             }} />
+          )}
+
+          {/* DAMAGE FLASH OVERLAY - Red flash when taking damage */}
+          {damageFlash && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: damageFlash.isCritical
+                ? 'radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, rgba(185, 28, 28, 0.8) 100%)'
+                : 'radial-gradient(circle, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.5) 100%)',
+              pointerEvents: 'none',
+              animation: 'damageFlash 0.5s ease-out forwards',
+              zIndex: 100,
+            }}>
+              {/* Damage indicator text */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: damageFlash.isCritical ? '48px' : '32px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#EF4444',
+                textShadow: '3px 3px 0 #7F1D1D, -1px -1px 0 #000',
+                animation: 'damageText 0.5s ease-out forwards',
+              }}>
+                -{damageFlash.amount.toFixed(1)} ❤️
+              </div>
+              {/* Source indicator */}
+              <div style={{
+                position: 'absolute',
+                top: '60%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: '12px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#FCA5A5',
+                textShadow: '2px 2px 0 #000',
+              }}>
+                {damageFlash.source.toUpperCase()}
+              </div>
+            </div>
+          )}
+
+          {/* MINING PROGRESS BAR - Shows when mining blocks */}
+          {miningProgress && (
+            <div style={{
+              position: 'absolute',
+              bottom: '120px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '300px',
+              background: 'rgba(15, 23, 42, 0.9)',
+              border: '3px solid #F59E0B',
+              borderRadius: '4px',
+              padding: '10px 15px',
+              boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)',
+              zIndex: 50,
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '8px',
+              }}>
+                <span style={{
+                  fontSize: '10px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#F59E0B',
+                }}>
+                  ⛏️ MINING
+                </span>
+                <span style={{
+                  fontSize: '10px',
+                  fontFamily: '"Press Start 2P", monospace',
+                  color: '#FCD34D',
+                }}>
+                  {miningProgress.displayName}
+                </span>
+              </div>
+              <div style={{
+                height: '12px',
+                background: '#1E293B',
+                borderRadius: '2px',
+                overflow: 'hidden',
+                border: '2px solid #475569',
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${miningProgress.progress}%`,
+                  background: miningProgress.isComplete
+                    ? 'linear-gradient(90deg, #4ADE80, #22C55E)'
+                    : 'linear-gradient(90deg, #F59E0B, #FBBF24)',
+                  transition: 'width 0.1s ease-out',
+                  boxShadow: miningProgress.isComplete
+                    ? '0 0 10px rgba(74, 222, 128, 0.6)'
+                    : '0 0 10px rgba(245, 158, 11, 0.6)',
+                }} />
+              </div>
+              <div style={{
+                textAlign: 'right',
+                marginTop: '4px',
+                fontSize: '8px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: miningProgress.isComplete ? '#4ADE80' : '#94A3B8',
+              }}>
+                {miningProgress.isComplete ? 'COMPLETE!' : `${Math.round(miningProgress.progress)}%`}
+              </div>
+            </div>
           )}
 
           {/* Thinking indicator */}
@@ -2418,7 +2603,9 @@ export default function Dashboard() {
                     ? 'itemEat 1s ease-in-out infinite'
                     : heldItem.action === 'placing'
                       ? 'itemPlace 0.5s ease-out'
-                      : 'itemBob 2s ease-in-out infinite',
+                      : heldItem.action === 'crafting'
+                        ? 'itemCraft 0.6s ease-in-out infinite'
+                        : 'itemBob 2s ease-in-out infinite',
             transformOrigin: 'bottom center',
           }}>
             {/* Item sprite container */}
@@ -2441,37 +2628,39 @@ export default function Dashboard() {
             }}>
               {heldItem.name ? (
                 /* Item icon using Minecraft wiki sprites */
-                <img
-                  src={`https://minecraft.wiki/images/Invicon_${heldItem.name
-                    .split('_')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join('_')}.png`}
-                  alt={heldItem.displayName || heldItem.name}
-                  style={{
+                heldItemImageError ? (
+                  /* Fallback when image fails to load - use React state, NOT DOM manipulation */
+                  <div style={{
                     width: '64px',
                     height: '64px',
-                    imageRendering: 'pixelated',
-                    filter: 'drop-shadow(2px 2px 0 rgba(0,0,0,0.5))',
-                  }}
-                  onError={(e) => {
-                    // Fallback to a colored square with text
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.parentElement!.innerHTML = `<div style="
-                      width: 64px;
-                      height: 64px;
-                      background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
-                      border-radius: 4px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      font-size: 24px;
-                      font-family: 'Press Start 2P', monospace;
-                      color: #fff;
-                      text-shadow: 2px 2px 0 #000;
-                    ">${(heldItem.name?.charAt(0) || '?').toUpperCase()}</div>`;
-                  }}
-                />
+                    background: 'linear-gradient(135deg, #4ADE80 0%, #22C55E 100%)',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    fontFamily: '"Press Start 2P", monospace',
+                    color: '#fff',
+                    textShadow: '2px 2px 0 #000',
+                  }}>
+                    {(heldItem.name?.charAt(0) || '?').toUpperCase()}
+                  </div>
+                ) : (
+                  <img
+                    src={`https://minecraft.wiki/images/Invicon_${heldItem.name
+                      .split('_')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join('_')}.png`}
+                    alt={heldItem.displayName || heldItem.name}
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      imageRendering: 'pixelated',
+                      filter: 'drop-shadow(2px 2px 0 rgba(0,0,0,0.5))',
+                    }}
+                    onError={() => setHeldItemImageError(true)}
+                  />
+                )
               ) : (
                 /* Empty hand - Steve's hand from Minecraft */
                 <div style={{
@@ -2515,6 +2704,7 @@ export default function Dashboard() {
                 background: heldItem.action === 'mining' ? '#F59E0B'
                   : heldItem.action === 'attacking' ? '#EF4444'
                   : heldItem.action === 'eating' ? '#22C55E'
+                  : heldItem.action === 'crafting' ? '#A855F7'
                   : '#3B82F6',
                 padding: '4px 8px',
                 borderRadius: '4px',

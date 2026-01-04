@@ -176,7 +176,9 @@ export class MinecraftGame {
     recoveryStartTime: 0,            // When did we start recovery?
     lastSuccessfulMoveTime: Date.now(), // When did we last move successfully?
     positionHistoryForStuck: [] as { x: number; y: number; z: number; time: number }[], // Track position history
+    lastWaterEscapeTime: 0,          // FIX: Track when we last escaped water to prevent immediate re-trigger
   };
+  private readonly WATER_ESCAPE_COOLDOWN_MS = 5000; // 5 second cooldown after water escape
   private readonly MAX_RECOVERY_ATTEMPTS = 5;
   private readonly STUCK_THRESHOLD_MS = 30000; // If no successful move in 30s, consider stuck
 
@@ -545,7 +547,16 @@ export class MinecraftGame {
       // IMMEDIATELY clear all controls to prevent flying kick after respawn
       this.clearAllControls();
       this.isEscaping = false; // Stop any emergency escape in progress
-      
+
+      // CRITICAL: Clear ALL recovery/stuck state to prevent "floating too long" kicks
+      // Without this, bot respawns thinking it's still in recovery mode
+      this.stuckState.isInRecoveryMode = false;
+      this.stuckState.currentRecoveryAttempts = 0;
+      this.stuckState.consecutiveBlockedMoves = 0;
+      this.isNavigating = false;
+      this.damageSource = 'unknown';
+      this.isEnvironmentalDamage = false;
+
       this.sessionStats.deaths++;
       const sessionDuration = Math.floor((Date.now() - this.sessionStats.startTime) / 1000);
       logger.warn(`[SESSION-STATS] BOT DIED! Deaths this session: ${this.sessionStats.deaths}`);
@@ -568,13 +579,20 @@ export class MinecraftGame {
 
     this.bot.on('respawn', () => {
       logger.info('[SESSION-STATS] Bot respawned - fresh start!');
-      
+
       // IMMEDIATELY clear all controls to prevent flying kick
       this.clearAllControls();
       this.isEscaping = false;
-      
+
+      // CRITICAL: Clear ALL recovery/stuck state (same as death handler)
+      // This ensures completely clean state after respawn
+      this.stuckState.isInRecoveryMode = false;
+      this.stuckState.currentRecoveryAttempts = 0;
+      this.stuckState.consecutiveBlockedMoves = 0;
+      this.isNavigating = false;
+
       this.bot?.chat("I'm back! Starting fresh.");
-      
+
       // Reset health tracking on respawn
       this.spawnTime = Date.now(); // Reset spawn time for grace period
       this.lastKnownHealth = this.bot?.health ?? 20;
@@ -582,6 +600,8 @@ export class MinecraftGame {
       this.isUnderAttack = false;
       this.attackerName = null;
       this.emergencyFleeRequested = false;
+      this.damageSource = 'unknown';
+      this.isEnvironmentalDamage = false;
       
       // Broadcast fresh state to UI immediately (20/20 health)
       setTimeout(() => this.notifyStateChange(), 100);
@@ -662,21 +682,37 @@ export class MinecraftGame {
           this.isEnvironmentalDamage = true;
         }
         
-        // If not environmental, check for hostile mobs
+        // If not environmental, check for hostile mobs AND players
         let hasRealThreat = false;
         if (!this.isEnvironmentalDamage) {
+          // First check for hostile mobs
           const nearbyHostiles = this.getNearbyHostileMobs(8);
           const closestHostile = nearbyHostiles.length > 0 ? nearbyHostiles[0] : null;
           if (closestHostile) {
             this.damageSource = 'mob';
             this.attackerName = closestHostile.name;
             hasRealThreat = true;
+          } else {
+            // FIX: Also check for nearby players who might be attacking
+            // Players have entity.type === 'player', not 'mob'
+            const nearbyPlayers = this.getNearbyPlayers(8);
+            const closestPlayer = nearbyPlayers.length > 0 ? nearbyPlayers[0] : null;
+            if (closestPlayer) {
+              this.damageSource = 'mob'; // Treat player attacks like mob attacks
+              this.attackerName = closestPlayer.name;
+              hasRealThreat = true;
+              logger.warn(`[HEALTH-ALERT] Player attack detected! attacker=${closestPlayer.name} dist=${closestPlayer.distance.toFixed(1)}`);
+            }
           }
         }
-        
-        // Set attackerName for display purposes
-        if (!hasRealThreat) {
+
+        // FIX: Only set attackerName if we have a REAL source, not 'unknown'
+        // Leave attackerName as null if we truly don't know - the UI can handle null
+        if (!hasRealThreat && this.damageSource !== 'unknown') {
           this.attackerName = this.damageSource;
+        } else if (!hasRealThreat) {
+          // Unknown damage source - don't set attackerName to literal "unknown"
+          this.attackerName = null;
         }
         
         const recentDamage = this.calculateRecentDamage(5000); // Last 5 seconds for drowning
@@ -743,6 +779,23 @@ export class MinecraftGame {
     this.bot.on('kicked', (reason) => {
       logger.error('Bot was kicked', { reason });
       this.isConnected = false;
+
+      // AUTO-RECONNECT: Wait and reconnect after kick
+      const reconnectDelay = 5000; // 5 seconds
+      logger.info(`[RECONNECT] Will attempt to reconnect in ${reconnectDelay / 1000} seconds...`);
+      setTimeout(async () => {
+        if (!this.isConnected) {
+          logger.info('[RECONNECT] Attempting to reconnect after kick...');
+          try {
+            await this.connect();
+            logger.info('[RECONNECT] Successfully reconnected!');
+          } catch (err) {
+            logger.error('[RECONNECT] Failed to reconnect', { error: err });
+            // Try again in 30 seconds
+            setTimeout(() => this.attemptReconnect(), 30000);
+          }
+        }
+      }, reconnectDelay);
     });
 
     this.bot.on('error', (err) => {
@@ -823,8 +876,18 @@ export class MinecraftGame {
         clearInterval(this.statsInterval);
         this.statsInterval = null;
       }
+      // Clear control safety interval
+      if (this.controlSafetyInterval) {
+        clearInterval(this.controlSafetyInterval);
+        this.controlSafetyInterval = null;
+      }
       // Log final session stats
       this.logSessionStats('FINAL');
+
+      // AUTO-RECONNECT: Wait and reconnect after disconnect
+      const reconnectDelay = 10000; // 10 seconds
+      logger.info(`[RECONNECT] Connection ended. Will attempt to reconnect in ${reconnectDelay / 1000} seconds...`);
+      setTimeout(() => this.attemptReconnect(), reconnectDelay);
     });
 
     // Start periodic stats logging (every 60 seconds)
@@ -833,7 +896,27 @@ export class MinecraftGame {
       this.logSessionStats('PERIODIC');
     }, 60000);
     logger.info('[SESSION-STATS] Session started, will log stats every 60 seconds');
+
+    // SAFETY: Clear stuck controls every 30 seconds to prevent "floating too long" kicks
+    // This prevents the bot from being kicked when controls get stuck during recovery
+    this.controlSafetyInterval = setInterval(() => {
+      if (this.bot && this.isConnected) {
+        // If we've been in recovery mode for too long, force clear
+        if (this.stuckState.isInRecoveryMode) {
+          const recoveryDuration = Date.now() - this.stuckState.recoveryStartTime;
+          if (recoveryDuration > 20000) { // 20 seconds max recovery
+            logger.warn('[SAFETY] Recovery taking too long, clearing controls to prevent kick', {
+              duration: `${Math.round(recoveryDuration / 1000)}s`
+            });
+            this.clearAllControls();
+            this.stuckState.isInRecoveryMode = false;
+          }
+        }
+      }
+    }, 10000); // Check every 10 seconds
   }
+
+  private controlSafetyInterval: NodeJS.Timeout | null = null;
 
   /**
    * Log current session statistics
@@ -2171,7 +2254,15 @@ export class MinecraftGame {
     // Prevent spam - only escape once every 2 seconds
     const now = Date.now();
     if (this.isEscaping || now - this.lastEscapeTime < 2000) return;
-    
+
+    // CRITICAL: If recoverFromStuck() is already handling the situation, yield to it.
+    // The recovery system is more comprehensive (15s with direction finding + digging).
+    // Without this check, emergencyEscape() fights recovery for control → "floating" kicks.
+    if (this.stuckState.isInRecoveryMode) {
+      logger.debug('[EMERGENCY] Yielding to recovery system already in progress');
+      return;
+    }
+
     this.isEscaping = true;
     this.lastEscapeTime = now;
     
@@ -2701,10 +2792,14 @@ export class MinecraftGame {
         this.bot.clearControlStates();
         const finalY = Math.floor(pos.y);
         logger.info('[SWIM] Surfaced!', { startY, finalY });
-        
+
         // Now try to find shore
-        await this.findShore();
-        
+        const shoreResult = await this.findShore();
+
+        // FIX: Record successful water escape time for cooldown
+        this.stuckState.lastWaterEscapeTime = Date.now();
+        logger.info('[SWIM] Water escape recorded for cooldown', { shoreResult });
+
         return `Success! Swam to surface (Y=${startY} → Y=${finalY})`;
       }
     }
@@ -2715,9 +2810,13 @@ export class MinecraftGame {
 
   /**
    * Find and move to shore from water
+   * FIX: Must find ACTUAL dry land, not just "shore with feet in water"
    */
   private async findShore(): Promise<string> {
     if (!this.bot) return 'Bot not initialized';
+
+    const startPos = this.bot.entity.position.clone();
+    logger.info('[SHORE] Searching for dry land...');
 
     // Look for solid ground in all directions
     const directions = [
@@ -2735,32 +2834,83 @@ export class MinecraftGame {
           Math.floor(pos.y),
           Math.floor(pos.z) + dir.dz * dist
         );
-        
+
         const groundBlock = this.bot.blockAt(checkPos.offset(0, -1, 0));
         const feetBlock = this.bot.blockAt(checkPos);
         const headBlock = this.bot.blockAt(checkPos.offset(0, 1, 0));
-        
-        // Found solid ground with air above
+
+        // FIX: Require DRY feet position (AIR at feet, not water!)
+        // This was the bug: feetBlock.name === 'water' was allowed, causing bot to "find shore" while still in water
         if (groundBlock && groundBlock.name !== 'air' && groundBlock.name !== 'water' &&
-            feetBlock && (feetBlock.name === 'air' || feetBlock.name === 'water') &&
+            feetBlock && feetBlock.name === 'air' &&  // MUST be air, not water!
             headBlock && headBlock.name === 'air') {
-          
-          // Move towards it
+
+          logger.info('[SHORE] Found dry land!', {
+            direction: `${dir.dx},${dir.dz}`,
+            distance: dist,
+            ground: groundBlock.name
+          });
+
+          // Move towards it using SPRINT for faster escape
           const yaw = Math.atan2(-dir.dx, -dir.dz);
           await this.bot.look(yaw, 0, false);
-          
+
+          this.bot.setControlState('sprint', true);  // FIX: Sprint instead of walk
           this.bot.setControlState('forward', true);
           this.bot.setControlState('jump', true); // Keep jumping in case still in water
-          await new Promise(resolve => setTimeout(resolve, dist * 300));
+
+          // FIX: Move EXTRA distance (dist + 3 blocks) for safety buffer from water edge
+          const moveTime = (dist + 3) * 300;
+          await new Promise(resolve => setTimeout(resolve, moveTime));
           this.bot.clearControlStates();
-          
-          logger.info('[SHORE] Found shore!');
-          return 'Found shore';
+
+          // FIX: Verify we actually reached dry land
+          const finalPos = this.bot.entity.position;
+          const finalFeetBlock = this.bot.blockAt(finalPos);
+          const finalHeadBlock = this.bot.blockAt(finalPos.offset(0, 1.6, 0));
+          const distMoved = startPos.distanceTo(finalPos);
+
+          const isOnDryLand = finalFeetBlock?.name !== 'water' && finalHeadBlock?.name !== 'water';
+
+          if (isOnDryLand) {
+            logger.info('[SHORE] Successfully reached dry land!', {
+              distMoved: distMoved.toFixed(1),
+              feetBlock: finalFeetBlock?.name,
+            });
+            return 'Found shore and reached dry land';
+          } else {
+            logger.warn('[SHORE] Still in water after movement, trying next direction', {
+              distMoved: distMoved.toFixed(1),
+              feetBlock: finalFeetBlock?.name,
+              headBlock: finalHeadBlock?.name,
+            });
+            // Continue to try next direction
+          }
         }
       }
     }
 
-    return 'Could not find shore';
+    // FIX: If no shore found, try jumping and sprinting in a random direction as last resort
+    logger.warn('[SHORE] No dry land found in any direction, attempting desperate escape');
+    const randomYaw = Math.random() * Math.PI * 2 - Math.PI;
+    await this.bot.look(randomYaw, 0, false);
+
+    this.bot.setControlState('sprint', true);
+    this.bot.setControlState('forward', true);
+    this.bot.setControlState('jump', true);
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Sprint-jump for 3 seconds
+    this.bot.clearControlStates();
+
+    const finalPos = this.bot.entity.position;
+    const finalBlock = this.bot.blockAt(finalPos);
+    const escaped = finalBlock?.name !== 'water';
+
+    if (escaped) {
+      logger.info('[SHORE] Desperate escape worked!');
+      return 'Escaped water with desperate sprint';
+    }
+
+    return 'Could not find shore - still in water';
   }
 
   /**
@@ -2835,8 +2985,10 @@ export class MinecraftGame {
    */
   public isStuck(): boolean {
     // Check for consecutive blocked moves
-    if (this.stuckState.consecutiveBlockedMoves >= 2) {
-      logger.warn('[STUCK-CHECK] Stuck due to consecutive blocked moves');
+    // FIX: Increased threshold from 2 to 4 to reduce false positives
+    // Normal terrain variations can cause 2-3 consecutive pathfinder failures
+    if (this.stuckState.consecutiveBlockedMoves >= 4) {
+      logger.warn('[STUCK-CHECK] Stuck due to consecutive blocked moves', { count: this.stuckState.consecutiveBlockedMoves });
       return true;
     }
 
@@ -2847,12 +2999,15 @@ export class MinecraftGame {
       if (this.stuckState.positionHistoryForStuck.length >= 2) {
         const oldest = this.stuckState.positionHistoryForStuck[0];
         const newest = this.stuckState.positionHistoryForStuck[this.stuckState.positionHistoryForStuck.length - 1];
+        // FIX: Include Y-coordinate in distance calculation
+        // Without Y, vertical movement (climbing, mining up) was marked as "stuck"
         const dist = Math.sqrt(
-          Math.pow(newest.x - oldest.x, 2) + 
+          Math.pow(newest.x - oldest.x, 2) +
+          Math.pow(newest.y - oldest.y, 2) +
           Math.pow(newest.z - oldest.z, 2)
         );
-        if (dist < 2) { // Haven't moved more than 2 blocks in 30s
-          logger.warn('[STUCK-CHECK] Stuck due to no movement');
+        if (dist < 3) { // Haven't moved more than 3 blocks in 30s (3D distance)
+          logger.warn('[STUCK-CHECK] Stuck due to no movement', { dist: dist.toFixed(1), timeSinceSuccess });
           return true;
         }
       }
@@ -2864,15 +3019,32 @@ export class MinecraftGame {
   /**
    * Get stuck state for AI context
    */
-  public getStuckInfo(): { isStuck: boolean; blockedMoves: number; inWater: boolean; inRecovery: boolean } {
-    const inWater = this.bot ? 
-      (this.bot.blockAt(this.bot.entity.position)?.name === 'water') : false;
-    
+  public getStuckInfo(): { isStuck: boolean; blockedMoves: number; inWater: boolean; inLava: boolean; headInWater: boolean; inRecovery: boolean; recentlyEscapedWater: boolean } {
+    const pos = this.bot?.entity.position;
+    const headPos = pos ? pos.offset(0, 1.6, 0) : null;
+
+    // Check block at feet level
+    const blockAtFeet = pos ? this.bot?.blockAt(pos) : null;
+    const inWater = blockAtFeet?.name === 'water';
+    const inLava = blockAtFeet?.name === 'lava';
+
+    // Check block at head level for drowning detection
+    const blockAtHead = headPos ? this.bot?.blockAt(headPos) : null;
+    const headInWater = blockAtHead?.name === 'water';
+
+    // FIX: Check if we recently escaped water (within cooldown period)
+    // This prevents infinite recovery loops when bot slips back into water
+    const timeSinceWaterEscape = Date.now() - this.stuckState.lastWaterEscapeTime;
+    const recentlyEscapedWater = timeSinceWaterEscape < this.WATER_ESCAPE_COOLDOWN_MS;
+
     return {
       isStuck: this.isStuck(),
       blockedMoves: this.stuckState.consecutiveBlockedMoves,
-      inWater,
-      inRecovery: this.stuckState.isInRecoveryMode
+      inWater: inWater ?? false,
+      inLava: inLava ?? false,           // FIX: Now properly set for lava emergency detection
+      headInWater: headInWater ?? false, // FIX: Now properly set for drowning detection
+      inRecovery: this.stuckState.isInRecoveryMode,
+      recentlyEscapedWater,              // FIX: Used to add cooldown after water escape
     };
   }
 
@@ -6771,6 +6943,37 @@ ${aiAnalysis}
   }
 
   /**
+   * Get nearby players within a certain distance (for detecting player attackers)
+   * Excludes the bot itself
+   */
+  private getNearbyPlayers(maxDistance: number = 10): { name: string; distance: number; position: Vec3 }[] {
+    if (!this.bot) return [];
+
+    const players: { name: string; distance: number; position: Vec3 }[] = [];
+    const botUsername = this.bot.username?.toLowerCase();
+
+    Object.values(this.bot.entities).forEach(entity => {
+      // Players have entity.type === 'player'
+      if (entity.type === 'player' && entity.username && entity.position) {
+        // Skip ourselves
+        if (entity.username.toLowerCase() === botUsername) return;
+
+        const dist = this.bot!.entity.position.distanceTo(entity.position);
+        if (dist <= maxDistance) {
+          players.push({
+            name: entity.username,
+            distance: dist,
+            position: entity.position.clone(),
+          });
+        }
+      }
+    });
+
+    // Sort by distance (closest first)
+    return players.sort((a, b) => a.distance - b.distance);
+  }
+
+  /**
    * Check if bot is currently under attack
    */
   isCurrentlyUnderAttack(): boolean {
@@ -6839,10 +7042,87 @@ ${aiAnalysis}
   }
 
   /**
-   * Navigation-aware yaw smoother
-   * - During navigation: FAST smoothing (300°/sec) - quick enough to turn, but not instant
-   * - During idle: SLOW smoothing (90°/sec) - natural human-like head movement
-   * This prevents jarring camera jumps while still allowing pathfinder to work
+   * Attempt to reconnect after disconnection
+   * Uses exponential backoff with max retries
+   */
+  private reconnectAttempts = 0;
+  private readonly MAX_RECONNECT_ATTEMPTS = 10;
+  private readonly RECONNECT_BASE_DELAY = 5000; // 5 seconds
+
+  private async attemptReconnect(): Promise<void> {
+    if (this.isConnected) {
+      logger.info('[RECONNECT] Already connected, skipping reconnect');
+      return;
+    }
+
+    this.reconnectAttempts++;
+
+    if (this.reconnectAttempts > this.MAX_RECONNECT_ATTEMPTS) {
+      logger.error('[RECONNECT] Max reconnect attempts reached, giving up', {
+        attempts: this.reconnectAttempts
+      });
+      return;
+    }
+
+    // Exponential backoff: 5s, 10s, 20s, 40s... capped at 2 minutes
+    const delay = Math.min(
+      this.RECONNECT_BASE_DELAY * Math.pow(2, this.reconnectAttempts - 1),
+      120000
+    );
+
+    logger.info('[RECONNECT] Attempting reconnect...', {
+      attempt: this.reconnectAttempts,
+      maxAttempts: this.MAX_RECONNECT_ATTEMPTS,
+      nextDelayIfFail: `${Math.min(delay * 2, 120000) / 1000}s`
+    });
+
+    try {
+      // Clean up old bot instance if exists
+      if (this.bot) {
+        try {
+          this.bot.quit();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+        this.bot = null;
+      }
+
+      // Reset all stuck/recovery state
+      this.stuckState.isInRecoveryMode = false;
+      this.stuckState.currentRecoveryAttempts = 0;
+      this.stuckState.consecutiveBlockedMoves = 0;
+      this.isNavigating = false;
+
+      await this.connect();
+
+      // Success! Reset attempts counter
+      this.reconnectAttempts = 0;
+      logger.info('[RECONNECT] Successfully reconnected!');
+
+    } catch (err) {
+      logger.error('[RECONNECT] Failed to reconnect', {
+        error: err,
+        attempt: this.reconnectAttempts
+      });
+
+      // Schedule next attempt with backoff
+      logger.info(`[RECONNECT] Will retry in ${delay / 1000} seconds...`);
+      setTimeout(() => this.attemptReconnect(), delay);
+    }
+  }
+
+  /**
+   * Navigation-aware yaw smoother - DUAL MODE
+   * - During ACTIVE pathfinding: BYPASS smoothing entirely - pathfinder controls look directly
+   * - During idle/manual looks: SLOW smoothing (90°/sec) - natural human-like head movement
+   *
+   * FIX: The original "fast smoothing during navigation" caused erratic rotation because:
+   * 1. Pathfinder calls look() many times/sec pointing at each waypoint
+   * 2. Waypoints can be in wildly different directions (corners, obstacles)
+   * 3. Smoother couldn't keep up, creating "hunting" oscillation
+   *
+   * SOLUTION: When pathfinder is actively moving, let it control look directly.
+   * Smoothing is only for idle looks and manual lookAt commands.
    */
   private startNavigationAwareYawSmoother(): void {
     if (!this.bot || this.yawSmootherInterval) return;
@@ -6853,20 +7133,34 @@ ${aiAnalysis}
     // Store original look function
     const originalLook = this.bot.look.bind(this.bot);
 
-    // Override bot.look to set target instead of instant
+    // Override bot.look with dual-mode control
     this.bot.look = (yaw: number, pitch: number, force?: boolean) => {
       // Normalize incoming yaw to [-π, π]
       while (yaw > Math.PI) yaw -= 2 * Math.PI;
       while (yaw < -Math.PI) yaw += 2 * Math.PI;
 
+      // DUAL MODE: If pathfinder is actively navigating, bypass smoothing entirely
+      // This lets pathfinder control look direction directly for responsive movement
+      if (this.isNavigating && this.bot?.pathfinder?.isMoving?.()) {
+        // Direct look - no smoothing during active pathfinding
+        return originalLook(yaw, pitch, force);
+      }
+
+      // Non-navigation mode: queue for smoothing
       this.targetYaw = yaw;
       this.targetPitch = pitch;
       return Promise.resolve();
     };
 
-    // Run interpolation at 60fps
+    // Run interpolation at 60fps (only affects non-navigation looks)
     this.yawSmootherInterval = setInterval(() => {
       if (!this.bot) return;
+
+      // Skip smoothing entirely if pathfinder is actively moving
+      // The look is already being set directly in the override above
+      if (this.isNavigating && this.bot?.pathfinder?.isMoving?.()) {
+        return;
+      }
 
       // Get current angles
       let currentYaw = this.bot.entity.yaw;
@@ -6890,14 +7184,13 @@ ${aiAnalysis}
         return;
       }
 
-      // Choose velocity based on navigation state
-      // Navigation: 300°/sec = 5.24 rad/s = 0.084 rad per 16ms frame
-      // Idle: 90°/sec = 1.57 rad/s = 0.025 rad per 16ms frame
-      const maxYawPerFrame = this.isNavigating ? 0.084 : 0.025;
-      const maxPitchPerFrame = this.isNavigating ? 0.084 : 0.025;
+      // IDLE MODE: Slow, human-like smoothing
+      // 90°/sec = 1.57 rad/s = 0.025 rad per 16ms frame
+      const maxYawPerFrame = 0.025;
+      const maxPitchPerFrame = 0.025;
 
-      // Calculate interpolation (15% per frame for responsiveness)
-      const interpolationSpeed = this.isNavigating ? 0.20 : 0.08;
+      // Calculate interpolation (8% per frame for smooth, natural movement)
+      const interpolationSpeed = 0.08;
 
       let yawChange = yawDiff * interpolationSpeed;
       let pitchChange = pitchDiff * interpolationSpeed;
@@ -6924,7 +7217,7 @@ ${aiAnalysis}
       originalLook(newYaw, newPitch, false);
     }, 16); // 60fps
 
-    logger.debug('[YAW-SMOOTHER] Navigation-aware smoother started');
+    logger.debug('[YAW-SMOOTHER] Dual-mode smoother started (bypass during pathfinding, smooth during idle)');
   }
 
   /**

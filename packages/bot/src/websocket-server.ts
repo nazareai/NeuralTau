@@ -5,7 +5,7 @@ import type { GameState, GameAction, Decision, EmotionalState } from '@tau/share
 const logger = new Logger('WebSocket');
 
 export interface BroadcastEvent {
-  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup' | 'streamerMessage' | 'viewerChat' | 'donationAlert';
+  type: 'gameState' | 'decision' | 'action' | 'result' | 'stats' | 'thinking' | 'emotion' | 'activity' | 'config' | 'heldItem' | 'itemPickup' | 'streamerMessage' | 'viewerChat' | 'donationAlert' | 'damage' | 'miningProgress' | 'craftingProgress';
   timestamp: Date;
   data: any;
 }
@@ -170,10 +170,13 @@ export class TauWebSocketServer {
 
   /**
    * Broadcast activity status (crafting, smelting, attacking, etc.)
-   * Used to show visual indicators in the UI
+   * Used to show visual indicators in the UI - keeps viewers engaged!
    */
   broadcastActivity(activity: {
-    type: 'crafting' | 'smelting' | 'mining' | 'attacking' | 'idle';
+    type: 'crafting' | 'smelting' | 'mining' | 'attacking' | 'idle' |
+          'shooting' | 'fishing' | 'enchanting' | 'breeding' | 'harvesting' |
+          'planting' | 'farming' | 'trading' | 'building portal' | 'building' |
+          'defending' | 'branch mining' | 'sleeping' | 'organizing' | 'getting items';
     item?: string;
     active: boolean;
   }) {
@@ -191,7 +194,7 @@ export class TauWebSocketServer {
   broadcastHeldItem(heldItem: {
     name: string | null;
     displayName: string | null;
-    action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing';
+    action: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' | 'crafting';
   }) {
     this.broadcast({
       type: 'heldItem',
@@ -268,6 +271,57 @@ export class TauWebSocketServer {
       type: 'milestone',
       timestamp: new Date(),
       data: { text, type },
+    });
+  }
+
+  /**
+   * Broadcast damage event - triggers damage flash animation on frontend
+   * Shows red screen flash and damage indicator
+   */
+  broadcastDamage(damage: {
+    amount: number;
+    source: string;
+    currentHealth: number;
+    maxHealth: number;
+    isCritical: boolean;  // health < 6
+  }) {
+    this.broadcast({
+      type: 'damage',
+      timestamp: new Date(),
+      data: damage,
+    });
+  }
+
+  /**
+   * Broadcast mining progress - shows mining progress bar on frontend
+   */
+  broadcastMiningProgress(progress: {
+    blockName: string;
+    displayName: string;
+    progress: number;  // 0-100
+    position: { x: number; y: number; z: number };
+    isComplete: boolean;
+  }) {
+    this.broadcast({
+      type: 'miningProgress',
+      timestamp: new Date(),
+      data: progress,
+    });
+  }
+
+  /**
+   * Broadcast crafting progress - shows crafting animation on frontend
+   */
+  broadcastCraftingProgress(crafting: {
+    itemName: string;
+    displayName: string;
+    stage: 'start' | 'progress' | 'complete' | 'failed';
+    ingredients?: string[];
+  }) {
+    this.broadcast({
+      type: 'craftingProgress',
+      timestamp: new Date(),
+      data: crafting,
     });
   }
 

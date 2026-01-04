@@ -1,0 +1,5712 @@
+{
+  "lastUpdated": "2026-01-03T19:40:10.955Z",
+  "totalEntries": 113,
+  "entries": [
+    {
+      "timestamp": "2026-01-03T17:08:59.817Z",
+      "context": {
+        "position": {
+          "x": -105,
+          "y": 72,
+          "z": -58
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "birch_planks",
+          "diamond_axe",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "digging night shelter down 3 blocks"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined dirt → +2 stick, +1 wooden_shovel, +1 dirt"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:10:45.297Z",
+      "context": {
+        "position": {
+          "x": -99,
+          "y": 71,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "crafting_table",
+        "reasoning": "Need crafting table for tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Crafted crafting_table (now have 1)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:12:07.757Z",
+      "context": {
+        "position": {
+          "x": -91,
+          "y": 76,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "crafting_table",
+        "reasoning": "place table for advanced crafting"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed crafting_table at (-91, 76, -52)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:12:51.978Z",
+      "context": {
+        "position": {
+          "x": -91,
+          "y": 76,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "birch_log",
+        "reasoning": "tree:4, mine nearby tree for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Cannot reach birch_log (8.2 blocks away - need to be within 5.5)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:13:19.107Z",
+      "context": {
+        "position": {
+          "x": -95,
+          "y": 74,
+          "z": -60
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "birch_log",
+        "reasoning": "tree:4 close, mine wood now"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 15009ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:15:11.978Z",
+      "context": {
+        "position": {
+          "x": -107,
+          "y": 73,
+          "z": -50
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "stick",
+          "birch_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt",
+          "birch_log"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "birch_planks",
+        "reasoning": "craft planks from logs for crafting table"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 5011ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:16:56.488Z",
+      "context": {
+        "position": {
+          "x": -110,
+          "y": 72,
+          "z": -53
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "birch_log",
+        "reasoning": "tree 4 blocks away, mine for more wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined birch_log → +1 dirt"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:18:09.507Z",
+      "context": {
+        "position": {
+          "x": -101,
+          "y": 72,
+          "z": -61
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "crafting_table",
+        "reasoning": "craft table for tools"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 5013ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:19:08.468Z",
+      "context": {
+        "position": {
+          "x": -110,
+          "y": 70,
+          "z": -63
+        },
+        "health": 18,
+        "food": 16,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [
+          "item"
+        ],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "crafting_table",
+        "reasoning": "place table to craft wooden_pickaxe"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed crafting_table at (-109, 70, -64)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:20:10.319Z",
+      "context": {
+        "position": {
+          "x": -115,
+          "y": 65,
+          "z": -70
+        },
+        "health": 18,
+        "food": 16,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "birch_log",
+        "reasoning": "mine tree 6m west for wood at night"
+      },
+      "result": {
+        "success": false,
+        "message": "Cannot reach birch_log (5.6 blocks away - need to be within 5.5)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:20:55.034Z",
+      "context": {
+        "position": {
+          "x": -122,
+          "y": 67,
+          "z": -62
+        },
+        "health": 18,
+        "food": 16,
+        "inventory": [
+          "birch_log",
+          "stick",
+          "birch_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "digging down for night shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined dirt → +2 dirt"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:23:15.292Z",
+      "context": {
+        "position": {
+          "x": -72,
+          "y": 72,
+          "z": -58
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "grass_block",
+        "reasoning": "NIGHT_DIG_SHELTER: mine for dirt to build shelter"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined grass_block but item was not collected (may have despawned or fallen)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:24:56.688Z",
+      "context": {
+        "position": {
+          "x": -73,
+          "y": 73,
+          "z": -57
+        },
+        "health": 19.5,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "night shelter: west 100% success to tree/path"
+      },
+      "result": {
+        "success": false,
+        "message": "west was blocked, moved -45° instead - Pathfinder couldn't reach west (-45°) - moved 2.8 blocks, 21.7 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:25:11.923Z",
+      "context": {
+        "position": {
+          "x": -59,
+          "y": 76,
+          "z": -42
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_DIG_SHELTER: dig down for emergency shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined dirt → +1 dirt"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:26:05.244Z",
+      "context": {
+        "position": {
+          "x": -67,
+          "y": 78,
+          "z": -40
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "digging deeper for night shelter"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 15049ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:27:13.668Z",
+      "context": {
+        "position": {
+          "x": -54,
+          "y": 71,
+          "z": -38
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "night shelter: move west to tree per memory success"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached west using pathfinder (1.8 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:27:30.875Z",
+      "context": {
+        "position": {
+          "x": -70,
+          "y": 77,
+          "z": -48
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "night: approach tree 20m north for wood first"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached north using pathfinder (1.7 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:28:12.299Z",
+      "context": {
+        "position": {
+          "x": -61,
+          "y": 78,
+          "z": -44
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "night: approach tree 17m south for wood/shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "south was blocked, moved +45° instead - Reached near south (+45°) (2.1 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:29:15.625Z",
+      "context": {
+        "position": {
+          "x": -67,
+          "y": 77,
+          "z": -38
+        },
+        "health": 13.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_BUILD_SHELTER: dig down for safety"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined dirt but item was not collected (may have despawned or fallen)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:30:54.264Z",
+      "context": {
+        "position": {
+          "x": -64,
+          "y": 76,
+          "z": -45
+        },
+        "health": 13.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approach tree 20m east for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached east using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:31:13.308Z",
+      "context": {
+        "position": {
+          "x": -59,
+          "y": 77,
+          "z": -43
+        },
+        "health": 13.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approaching tree 10m east for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach east - moved 3.8 blocks, 7.8 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:31:36.259Z",
+      "context": {
+        "position": {
+          "x": -49,
+          "y": 72,
+          "z": -41
+        },
+        "health": 13.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "west 100% success, find trees for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached west using pathfinder (1.9 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:32:13.873Z",
+      "context": {
+        "position": {
+          "x": -55,
+          "y": 74,
+          "z": -42
+        },
+        "health": 13.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 12m south for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach south - moved 4.6 blocks, 6.6 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:32:57.355Z",
+      "context": {
+        "position": {
+          "x": -54,
+          "y": 68,
+          "z": -33
+        },
+        "health": 12.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approaching tree 16m west for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "west was blocked, moved +45° instead - Pathfinder couldn't reach west (+45°) - moved 9.0 blocks, 5.6 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:35:37.080Z",
+      "context": {
+        "position": {
+          "x": -55,
+          "y": 68,
+          "z": -38
+        },
+        "health": 12.333333969116211,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "break recover loop, west 100% success to find trees"
+      },
+      "result": {
+        "success": false,
+        "message": "Could not move west - all directions blocked (try 'recover' action if stuck)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:35:56.141Z",
+      "context": {
+        "position": {
+          "x": -55,
+          "y": 68,
+          "z": -38
+        },
+        "health": 12.333333969116211,
+        "food": 16,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "break stuck loop, high success rate south"
+      },
+      "result": {
+        "success": false,
+        "message": "STUCK! All directions blocked 2x - use 'recover' action to escape"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:46:26.799Z",
+      "context": {
+        "position": {
+          "x": -58,
+          "y": 77,
+          "z": -44
+        },
+        "health": 20,
+        "food": 15,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_DIG_SHELTER: dig down for emergency shelter"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined dirt but item was not collected (may have despawned or fallen)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:48:03.072Z",
+      "context": {
+        "position": {
+          "x": -53,
+          "y": 68,
+          "z": -37
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [
+          "item"
+        ],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "Night: approach 9m_south tree for wood first!"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached south using pathfinder (1.9 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:49:33.993Z",
+      "context": {
+        "position": {
+          "x": -50,
+          "y": 67,
+          "z": -27
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "dirt",
+        "reasoning": "sealing entrance for night shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed dirt below (no climb)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:50:14.074Z",
+      "context": {
+        "position": {
+          "x": -50,
+          "y": 67,
+          "z": -27
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approaching tree 19m west for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach west - moved 7.4 blocks, 5.6 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:50:34.690Z",
+      "context": {
+        "position": {
+          "x": -61,
+          "y": 64,
+          "z": -26
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "find tree for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "east was blocked, moved +45° instead - Reached east (+45°) using pathfinder (1.6 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:50:52.539Z",
+      "context": {
+        "position": {
+          "x": -55,
+          "y": 65,
+          "z": -20
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 13m_south for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near south (2.2 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:51:16.843Z",
+      "context": {
+        "position": {
+          "x": -55,
+          "y": 65,
+          "z": -12
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approach tree 5m south to mine logs"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached south using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:51:33.860Z",
+      "context": {
+        "position": {
+          "x": -53,
+          "y": 63,
+          "z": -2
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching 32m tree north for logs"
+      },
+      "result": {
+        "success": true,
+        "message": "north was blocked, moved +45° instead - Reached north (+45°) using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:52:15.011Z",
+      "context": {
+        "position": {
+          "x": -49,
+          "y": 63,
+          "z": -7
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approaching tree 8m west for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached west using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:52:33.903Z",
+      "context": {
+        "position": {
+          "x": -59,
+          "y": 67,
+          "z": -9
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching tree 25m north for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near north (2.2 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:53:15.799Z",
+      "context": {
+        "position": {
+          "x": -57,
+          "y": 64,
+          "z": -17
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 10m south for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach south - moved 4.1 blocks, 6.2 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:53:38.123Z",
+      "context": {
+        "position": {
+          "x": -57,
+          "y": 67,
+          "z": -9
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "grass_block",
+        "reasoning": "clear path south to 12m tree for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined grass_block → +1 dirt"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:55:12.011Z",
+      "context": {
+        "position": {
+          "x": -57,
+          "y": 66,
+          "z": -9
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching tree 10m north for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached north using pathfinder (1.9 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:55:34.402Z",
+      "context": {
+        "position": {
+          "x": -58,
+          "y": 64,
+          "z": -17
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "grass_block",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 11m south for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached south using pathfinder (1.8 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:56:55.135Z",
+      "context": {
+        "position": {
+          "x": -55,
+          "y": 69,
+          "z": -6
+        },
+        "health": 17.33333396911621,
+        "food": 17,
+        "inventory": [
+          "dirt",
+          "stick",
+          "sand",
+          "oak_log"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "craft planks from log for table and tools"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 5045ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:57:56.031Z",
+      "context": {
+        "position": {
+          "x": -56,
+          "y": 65,
+          "z": -20
+        },
+        "health": 13.333333969116211,
+        "food": 16,
+        "inventory": [
+          "oak_planks",
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "crafting_table",
+        "reasoning": "Have 4 planks, craft table next per suggestCraft"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 5017ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T17:59:13.638Z",
+      "context": {
+        "position": {
+          "x": -54,
+          "y": 64,
+          "z": -27
+        },
+        "health": 12.333333969116211,
+        "food": 13,
+        "inventory": [
+          "crafting_table",
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "crafting_table",
+        "reasoning": "place table for tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed crafting_table at (-55, 64, -28)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:00:10.909Z",
+      "context": {
+        "position": {
+          "x": -64,
+          "y": 63,
+          "z": -36
+        },
+        "health": 12.333333969116211,
+        "food": 12,
+        "inventory": [
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approach tree 20m east for wood first"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach east - moved 2.7 blocks, 10.0 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:01:33.229Z",
+      "context": {
+        "position": {
+          "x": -59,
+          "y": 68,
+          "z": -36
+        },
+        "health": 10.333333969116211,
+        "food": 11,
+        "inventory": [
+          "stick",
+          "sand"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_DIG_SHELTER: dig down for emergency shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:03:53.801Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "explore for trees, high success rate"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:05:54.624Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "Y=0 underground, escape to surface for trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:06:14.215Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "find tree for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:07:34.666Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "find tree for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:07:54.572Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "explore east for trees, vary from north"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:08:54.214Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "no wood, start early game wood collection"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:10:51.640Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "have logs, craft planks next for tools"
+      },
+      "result": {
+        "success": false,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:12:35.065Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "get wood first, planks craft failed"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:14:12.005Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "have logs, craft planks next for sticks/table"
+      },
+      "result": {
+        "success": false,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:16:33.871Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "need wood for planks/tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:18:12.130Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "have logs, craft planks next for sticks/table"
+      },
+      "result": {
+        "success": false,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:19:53.450Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "get wood first, break craft loop"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:21:31.061Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "have logs, craft planks next"
+      },
+      "result": {
+        "success": false,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:23:54.951Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "need wood, high success rate"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:25:31.446Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "have logs, craft planks next for sticks/table"
+      },
+      "result": {
+        "success": false,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:27:13.460Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "get wood first, crafting failed"
+      },
+      "result": {
+        "success": true,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:28:52.301Z",
+      "context": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "have logs, craft planks next for sticks/table"
+      },
+      "result": {
+        "success": false,
+        "message": "Not connected to Minecraft server"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:39:30.775Z",
+      "context": {
+        "position": {
+          "x": -50,
+          "y": 76,
+          "z": -45
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching tree 10m north for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach north - moved 1.3 blocks, 9.4 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:41:12.293Z",
+      "context": {
+        "position": {
+          "x": -70,
+          "y": 79,
+          "z": -41
+        },
+        "health": 20,
+        "food": 17,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approach tree 12m west for wood first in night"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached west using pathfinder (1.4 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:41:36.924Z",
+      "context": {
+        "position": {
+          "x": -79,
+          "y": 80,
+          "z": -41
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "NIGHT_DIG_SHELTER: approach tree 14m north for wood first"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach north - moved 3.0 blocks, 7.3 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:42:54.522Z",
+      "context": {
+        "position": {
+          "x": -75,
+          "y": 78,
+          "z": -48
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approach tree 9m_south for wood first in evening"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach south - moved 6.1 blocks, 4.0 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:43:14.564Z",
+      "context": {
+        "position": {
+          "x": -75,
+          "y": 78,
+          "z": -43
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_DIG_SHELTER: mine dirt for emergency shelter"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined dirt but item was not collected (may have despawned or fallen)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:46:51.535Z",
+      "context": {
+        "position": {
+          "x": -75,
+          "y": 78,
+          "z": -43
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [
+          "item",
+          "arrow"
+        ],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_DIG_SHELTER: dig down for emergency shelter"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 15096ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:48:36.733Z",
+      "context": {
+        "position": {
+          "x": -69,
+          "y": 76,
+          "z": -40
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "dirt",
+        "reasoning": "sealing entrance for night shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed dirt below (no climb)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:50:00.927Z",
+      "context": {
+        "position": {
+          "x": -67,
+          "y": 78,
+          "z": -40
+        },
+        "health": 17,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "night: approach tree 20m east for wood first"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached east using pathfinder (1.9 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:50:40.152Z",
+      "context": {
+        "position": {
+          "x": -61,
+          "y": 75,
+          "z": -40
+        },
+        "health": 19.66666603088379,
+        "food": 17,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 18m south for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach south - moved 13.5 blocks, 7.6 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:51:49.144Z",
+      "context": {
+        "position": {
+          "x": -56,
+          "y": 71,
+          "z": -39
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 10m south for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near south (2.4 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:52:01.942Z",
+      "context": {
+        "position": {
+          "x": -56,
+          "y": 64,
+          "z": -27
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 13m south for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "south was blocked, moved +45° instead - Reached south (+45°) using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:54:45.266Z",
+      "context": {
+        "position": {
+          "x": -90,
+          "y": 49,
+          "z": -5
+        },
+        "health": 14.333333969116211,
+        "food": 16,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to surface for trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 4 blocks (Y: 49 → 53). Use dig_up again (~9 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:55:06.120Z",
+      "context": {
+        "position": {
+          "x": -82,
+          "y": 53,
+          "z": -16
+        },
+        "health": 14.333333969116211,
+        "food": 16,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to surface for trees"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=49. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:57:15.042Z",
+      "context": {
+        "position": {
+          "x": -66,
+          "y": 50,
+          "z": -23
+        },
+        "health": 11.333333969116211,
+        "food": 15,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees Y=50"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=41. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:58:07.093Z",
+      "context": {
+        "position": {
+          "x": -83,
+          "y": 42,
+          "z": -22
+        },
+        "health": 11.333333969116211,
+        "food": 15,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 4 blocks (Y: 42 → 46). Use dig_up again (~16 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:58:25.767Z",
+      "context": {
+        "position": {
+          "x": -92,
+          "y": 44,
+          "z": -8
+        },
+        "health": 11.333333969116211,
+        "food": 14,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground, still trapped Y=44 no wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=43. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T18:59:46.421Z",
+      "context": {
+        "position": {
+          "x": -81,
+          "y": 42,
+          "z": -14
+        },
+        "health": 11.333333969116211,
+        "food": 14,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "escape shaft, approach tree 31m west for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near west (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:00:19.162Z",
+      "context": {
+        "position": {
+          "x": -86,
+          "y": 41,
+          "z": -19
+        },
+        "health": 11.333333969116211,
+        "food": 14,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escape underground trap to surface for trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 1 blocks by jumping (Y: 41 → 42). Continue with dig_up."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:00:45.794Z",
+      "context": {
+        "position": {
+          "x": -84,
+          "y": 42,
+          "z": -21
+        },
+        "health": 11.333333969116211,
+        "food": 14,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground no wood tree far"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=41. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:00:58.272Z",
+      "context": {
+        "position": {
+          "x": -81,
+          "y": 41,
+          "z": -21
+        },
+        "health": 11.333333969116211,
+        "food": 14,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to reach surface trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 1 blocks by jumping (Y: 41 → 42). Continue with dig_up."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:10:59.756Z",
+      "context": {
+        "position": {
+          "x": -81,
+          "y": 40,
+          "z": -18
+        },
+        "health": 11.333333969116211,
+        "food": 14,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 2 blocks (Y: 40 → 42). Use dig_up again (~20 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:11:20.540Z",
+      "context": {
+        "position": {
+          "x": -89,
+          "y": 42,
+          "z": -12
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 1 blocks (Y: 42 → 43). Use dig_up again (~19 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:11:40.741Z",
+      "context": {
+        "position": {
+          "x": -92,
+          "y": 43,
+          "z": -9
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees, still trapped Y=43"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=43. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:12:04.240Z",
+      "context": {
+        "position": {
+          "x": -92,
+          "y": 43,
+          "z": -9
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "recover",
+        "target": "",
+        "reasoning": "stuck in shaft Y=43 underground no wood, escape to surface"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 10002ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:12:51.739Z",
+      "context": {
+        "position": {
+          "x": -85,
+          "y": 40,
+          "z": -5
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 1 blocks by jumping (Y: 40 → 41). Continue with dig_up."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:13:14.649Z",
+      "context": {
+        "position": {
+          "x": -86,
+          "y": 41,
+          "z": -5
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground Y=41<60 no wood trees far"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached east using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:13:40.162Z",
+      "context": {
+        "position": {
+          "x": -78,
+          "y": 37,
+          "z": -5
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 3 blocks (Y: 37 → 40). Use dig_up again (~22 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:13:54.156Z",
+      "context": {
+        "position": {
+          "x": -87,
+          "y": 40,
+          "z": -11
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground, Y=40<60 no wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 2 blocks by jumping (Y: 40 → 42). Continue with dig_up."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:14:22.751Z",
+      "context": {
+        "position": {
+          "x": -89,
+          "y": 42,
+          "z": -15
+        },
+        "health": 11.333333969116211,
+        "food": 13,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground, Y=42<60 no wood, reach surface for trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 3 blocks (Y: 42 → 45). Use dig_up again (~17 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:16:38.659Z",
+      "context": {
+        "position": {
+          "x": -82,
+          "y": 38,
+          "z": -7
+        },
+        "health": 10.333333969116211,
+        "food": 12,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground to find trees"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 2 blocks (Y: 38 → 40). Use dig_up again (~22 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:16:55.287Z",
+      "context": {
+        "position": {
+          "x": -85,
+          "y": 40,
+          "z": -19
+        },
+        "health": 10.333333969116211,
+        "food": 12,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground trap Y=40 no wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 2 blocks by jumping (Y: 40 → 42). Continue with dig_up."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:17:19.599Z",
+      "context": {
+        "position": {
+          "x": -86,
+          "y": 42,
+          "z": -20
+        },
+        "health": 10.333333969116211,
+        "food": 12,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground, Y=42<60 no wood trees far"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=42. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:18:02.657Z",
+      "context": {
+        "position": {
+          "x": -81,
+          "y": 54,
+          "z": -21
+        },
+        "health": 10.333333969116211,
+        "food": 11,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escaping underground no wood Y=54"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=49. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:19:42.272Z",
+      "context": {
+        "position": {
+          "x": -105,
+          "y": 39,
+          "z": 6
+        },
+        "health": 6.333333969116211,
+        "food": 11,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "dig_up",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "recover",
+        "target": "",
+        "reasoning": "stuck in shaft underground, low HP, escape to surface"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 10001ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:22:47.193Z",
+      "context": {
+        "position": {
+          "x": -116,
+          "y": 22,
+          "z": 0
+        },
+        "health": 6.333333969116211,
+        "food": 11,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "nearby",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "escape underground: low HP, night shelter, no wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=16. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:25:07.296Z",
+      "context": {
+        "position": {
+          "x": -121,
+          "y": 18,
+          "z": 4
+        },
+        "health": 4.333333969116211,
+        "food": 10,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "nearby",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "nearby",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "CRITICAL_HP_FLEE_NOW underground escape Y=18 no wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=9. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:27:06.566Z",
+      "context": {
+        "position": {
+          "x": -120,
+          "y": 16,
+          "z": 3
+        },
+        "health": 4.333333969116211,
+        "food": 9,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "nearby",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "CRITICAL_HP_FLEE_NOW underground escape to surface"
+      },
+      "result": {
+        "success": false,
+        "message": "Stuck in vertical shaft at Y=5. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:29:09.182Z",
+      "context": {
+        "position": {
+          "x": -139,
+          "y": 13,
+          "z": 12
+        },
+        "health": 4.333333969116211,
+        "food": 9,
+        "inventory": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "south",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "dig_up",
+        "target": "",
+        "reasoning": "CRITICAL_HP_FLEE_NOW underground Y=13 escape to surface"
+      },
+      "result": {
+        "success": true,
+        "message": "Climbed 1 blocks (Y: 13 → 14). Use dig_up again (~48 more to surface)."
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:29:44.377Z",
+      "context": {
+        "position": {
+          "x": -57,
+          "y": 80,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "night: approach tree 16m west for wood/shelter"
+      },
+      "result": {
+        "success": true,
+        "message": "west was blocked, moved +45° instead - Reached near west (+45°) (2.1 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:29:59.449Z",
+      "context": {
+        "position": {
+          "x": -64,
+          "y": 75,
+          "z": -56
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "Night: approach tree 11m north for wood first"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near north (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:30:32.404Z",
+      "context": {
+        "position": {
+          "x": -64,
+          "y": 72,
+          "z": -64
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "mine tree 7m north for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 15016ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:32:39.425Z",
+      "context": {
+        "position": {
+          "x": -46,
+          "y": 71,
+          "z": -67
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "rotten_flesh",
+          "oak_log"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [
+          "item"
+        ],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "Have log, craft planks for table/tools - stop mining loop"
+      },
+      "result": {
+        "success": true,
+        "message": "Crafted oak_planks (now have 4)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:34:23.727Z",
+      "context": {
+        "position": {
+          "x": -61,
+          "y": 84,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approaching tree 10m east for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near east (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:34:40.445Z",
+      "context": {
+        "position": {
+          "x": -53,
+          "y": 75,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "tree 8m east visible, mine for wood now"
+      },
+      "result": {
+        "success": false,
+        "message": "Cannot reach oak_log (6.3 blocks away - need to be within 5.5)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:34:59.481Z",
+      "context": {
+        "position": {
+          "x": -51,
+          "y": 74,
+          "z": -52
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching tree 17m north for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach north - moved 7.8 blocks, 2.5 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:35:23.897Z",
+      "context": {
+        "position": {
+          "x": -51,
+          "y": 72,
+          "z": -60
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approaching tree 11m east for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached east using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:36:18.648Z",
+      "context": {
+        "position": {
+          "x": -71,
+          "y": 78,
+          "z": -42
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching tree 12m north for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near north (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:36:39.429Z",
+      "context": {
+        "position": {
+          "x": -71,
+          "y": 76,
+          "z": -50
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "north",
+        "reasoning": "approaching tree 19m north for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached north using pathfinder (1.9 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:37:22.553Z",
+      "context": {
+        "position": {
+          "x": -69,
+          "y": 74,
+          "z": -58
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "explore for trees, avoid repeating north moves"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near east (2.2 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:37:40.511Z",
+      "context": {
+        "position": {
+          "x": -61,
+          "y": 74,
+          "z": -58
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approaching tree 15m east for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near east (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-03T19:38:20.750Z",
+      "context": {
+        "position": {
+          "x": -51,
+          "y": 72,
+          "z": -58
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approaching tree 13m east for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach east - moved 6.6 blocks, 3.4 remaining"
+      }
+    }
+  ]
+}

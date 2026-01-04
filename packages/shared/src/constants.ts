@@ -162,6 +162,8 @@ export const EARNING_MILESTONES = [
 
 export const TIMING = {
   AI_DECISION_INTERVAL: 20000, // 20 seconds - allows actions (up to 15s) to complete before next decision
+  AI_DECISION_INTERVAL_DANGER: 5000, // 5 seconds when health is low or under attack - faster response!
+  AI_DECISION_INTERVAL_CRITICAL: 3000, // 3 seconds when health is critical (<6 HP) - MAXIMUM RESPONSE
   CHAT_CHECK_INTERVAL: 5000, // Check chat every 5 seconds
   DONATION_CHECK_INTERVAL: 10000, // Check for donations every 10 seconds
   STATS_UPDATE_INTERVAL: 60000, // Update stats every minute

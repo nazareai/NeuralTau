@@ -117,7 +117,7 @@ export interface GameState {
 }
 
 export interface GameAction {
-  type: 'move' | 'interact' | 'speak' | 'wait' | 'analyze' | 'mine' | 'place' | 'attack' | 'craft' | 'dig_up' | 'eat' | 'equip' | 'recover';
+  type: 'move' | 'interact' | 'speak' | 'wait' | 'analyze' | 'mine' | 'place' | 'attack' | 'craft' | 'dig_up' | 'eat' | 'equip' | 'recover' | 'smelt' | 'sleep' | 'till' | 'plant' | 'harvest' | 'breed' | 'store' | 'retrieve' | 'equip_armor' | 'bucket' | 'block' | 'shoot' | 'fish' | 'enchant' | 'branch_mine' | 'trade' | 'build_portal' | 'defend_base' | 'build_room';
   target?: string;
   parameters?: Record<string, unknown>;
   reasoning: string;

@@ -1,0 +1,1258 @@
+{
+  "lastUpdated": "2026-01-02T21:50:03.322Z",
+  "totalEntries": 25,
+  "entries": [
+    {
+      "timestamp": "2026-01-02T21:17:09.871Z",
+      "context": {
+        "position": {
+          "x": -74,
+          "y": 79,
+          "z": -46
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approach tree for wood, night shelter needs logs"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near west (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:17:40.391Z",
+      "context": {
+        "position": {
+          "x": -82,
+          "y": 80,
+          "z": -46
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "night shelter: get wood from nearby tree first"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined oak_log but item was not collected (may have despawned or fallen)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:19:14.782Z",
+      "context": {
+        "position": {
+          "x": -108,
+          "y": 75,
+          "z": -40
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe",
+          "oak_log"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "craft planks for tools and table"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 5017ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:20:28.426Z",
+      "context": {
+        "position": {
+          "x": -83,
+          "y": 77,
+          "z": -56
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "oak_log",
+          "oak_planks",
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "oak_log",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": false
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          },
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "crafting_table",
+        "reasoning": "Need crafting table for tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Crafted crafting_table (now have 1)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:21:53.533Z",
+      "context": {
+        "position": {
+          "x": -91,
+          "y": 75,
+          "z": -56
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "oak_log",
+          "crafting_table",
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "Craft planks from logs for sticks and tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near east (2.1 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:22:09.514Z",
+      "context": {
+        "position": {
+          "x": -83,
+          "y": 77,
+          "z": -56
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "oak_log",
+          "crafting_table",
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "oak_planks",
+        "reasoning": "Craft planks from logs for tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Crafted oak_planks (now have 4)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:23:10.312Z",
+      "context": {
+        "position": {
+          "x": -83,
+          "y": 77,
+          "z": -56
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "oak_planks",
+          "crafting_table",
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "oak_planks",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "stick",
+        "reasoning": "craft sticks from planks for tools"
+      },
+      "result": {
+        "success": true,
+        "message": "Crafted stick (now have 4)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:30:41.086Z",
+      "context": {
+        "position": {
+          "x": -83,
+          "y": 77,
+          "z": -56
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "oak_planks",
+          "stick",
+          "crafting_table",
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_BUILD_SHELTER: dig down for safety"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined dirt → +1 wooden_shovel"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:32:14.052Z",
+      "context": {
+        "position": {
+          "x": -80,
+          "y": 72,
+          "z": -60
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "dirt",
+        "reasoning": "sealing shelter entrance for night safety"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed dirt below (no climb)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:34:22.559Z",
+      "context": {
+        "position": {
+          "x": -80,
+          "y": 72,
+          "z": -60
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "digging night shelter down 3 blocks"
+      },
+      "result": {
+        "success": true,
+        "message": "Mined dirt → +2 dirt"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:35:55.315Z",
+      "context": {
+        "position": {
+          "x": -80,
+          "y": 71,
+          "z": -61
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "dirt",
+        "reasoning": "sealing shelter entrance for night safety"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed dirt below (no climb)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:36:35.157Z",
+      "context": {
+        "position": {
+          "x": -80,
+          "y": 71,
+          "z": -61
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "crafting_table",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "crafting_table",
+        "reasoning": "place table to craft wooden_pickaxe"
+      },
+      "result": {
+        "success": true,
+        "message": "Placed crafting_table at (-79, 71, -61)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:37:37.532Z",
+      "context": {
+        "position": {
+          "x": -75,
+          "y": 70,
+          "z": -68
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "night: approach tree 10m east for safe wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached east using pathfinder (1.6 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:38:03.123Z",
+      "context": {
+        "position": {
+          "x": -66,
+          "y": 72,
+          "z": -67
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "night",
+        "recentActions": [
+          {
+            "type": "place",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "east",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "night shelter: dig down 3 blocks first"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined dirt but item was not collected (may have despawned or fallen)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:39:49.955Z",
+      "context": {
+        "position": {
+          "x": -73,
+          "y": 67,
+          "z": -71
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "diamond_axe",
+          "wooden_shovel",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "dirt",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "oak_log",
+        "reasoning": "mine tree 7m east for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 15031ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:40:13.940Z",
+      "context": {
+        "position": {
+          "x": -70,
+          "y": 83,
+          "z": -55
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "place",
+        "target": "crafting_table",
+        "reasoning": "place table for tools"
+      },
+      "result": {
+        "success": false,
+        "message": "Don't have crafting_table in inventory"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:42:19.267Z",
+      "context": {
+        "position": {
+          "x": -62,
+          "y": 64,
+          "z": -23
+        },
+        "health": 17.33333396911621,
+        "food": 16,
+        "inventory": [],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "recover",
+            "target": "",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "east",
+        "reasoning": "approaching tree 18m east for wood"
+      },
+      "result": {
+        "success": false,
+        "message": "Pathfinder couldn't reach east - moved 6.7 blocks, 8.9 remaining"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:43:15.307Z",
+      "context": {
+        "position": {
+          "x": -67,
+          "y": 79,
+          "z": -47
+        },
+        "health": 20,
+        "food": 16,
+        "inventory": [],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": []
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approaching tree 13m west for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached west using pathfinder (1.9 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:43:36.314Z",
+      "context": {
+        "position": {
+          "x": -74,
+          "y": 77,
+          "z": -41
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "morning",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approaching tree 24m west for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "west was blocked, moved +45° instead - Reached west (+45°) using pathfinder (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:44:38.779Z",
+      "context": {
+        "position": {
+          "x": -73,
+          "y": 72,
+          "z": -62
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "west",
+        "reasoning": "approaching tree 10m west for logs"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near west (2.1 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:44:59.919Z",
+      "context": {
+        "position": {
+          "x": -81,
+          "y": 72,
+          "z": -62
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "find trees for wood, vary direction"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near south (2.0 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:45:36.476Z",
+      "context": {
+        "position": {
+          "x": -89,
+          "y": 76,
+          "z": -54
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [
+          "oak_log"
+        ],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "north",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "south",
+            "success": true
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "move",
+        "target": "south",
+        "reasoning": "approaching tree 7m_south for wood"
+      },
+      "result": {
+        "success": true,
+        "message": "Reached near south (2.2 blocks away)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:47:56.487Z",
+      "context": {
+        "position": {
+          "x": -98,
+          "y": 75,
+          "z": -46
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe",
+          "birch_log",
+          "dirt"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": false
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "craft",
+        "target": "birch_planks",
+        "reasoning": "craft planks from logs for tools"
+      },
+      "result": {
+        "success": false,
+        "message": "Failed to craft birch_planks: Error: missing ingredient"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:48:38.134Z",
+      "context": {
+        "position": {
+          "x": -108,
+          "y": 73,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "stick",
+          "oak_planks",
+          "crafting_table",
+          "wooden_shovel",
+          "diamond_axe"
+        ],
+        "nearbyBlocks": [],
+        "nearbyEntities": [],
+        "time": "day",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          }
+        ]
+      },
+      "decision": {
+        "type": "place",
+        "target": "crafting_table",
+        "reasoning": "place table to craft wooden_pickaxe"
+      },
+      "result": {
+        "success": false,
+        "message": "Action timed out after 3002ms - continuing to next cycle (action may still be running)"
+      }
+    },
+    {
+      "timestamp": "2026-01-02T21:49:28.447Z",
+      "context": {
+        "position": {
+          "x": -108,
+          "y": 73,
+          "z": -51
+        },
+        "health": 20,
+        "food": 20,
+        "inventory": [
+          "diamond_axe",
+          "dirt"
+        ],
+        "nearbyBlocks": [
+          "birch_log"
+        ],
+        "nearbyEntities": [
+          "item"
+        ],
+        "time": "evening",
+        "recentActions": [
+          {
+            "type": "mine",
+            "target": "birch_log",
+            "success": true
+          },
+          {
+            "type": "craft",
+            "target": "birch_planks",
+            "success": false
+          },
+          {
+            "type": "move",
+            "target": "west",
+            "success": true
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": false
+          },
+          {
+            "type": "place",
+            "target": "crafting_table",
+            "success": false
+          }
+        ]
+      },
+      "decision": {
+        "type": "mine",
+        "target": "dirt",
+        "reasoning": "NIGHT_BUILD_SHELTER: dig down for safety"
+      },
+      "result": {
+        "success": false,
+        "message": "Mined dirt but item was not collected (may have despawned or fallen)"
+      }
+    }
+  ]
+}

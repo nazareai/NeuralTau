@@ -10,7 +10,9 @@
       "Bash(cat:*)",
       "Bash(pnpm --filter @tau/bot build:*)",
       "Bash(pnpm --filter @tau/web build:*)",
-      "Bash(pnpm --filter @tau/shared build:*)"
+      "Bash(pnpm --filter @tau/shared build:*)",
+      "Bash(git checkout:*)",
+      "Bash(ls:*)"
     ]
   }
 }

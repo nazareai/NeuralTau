@@ -18,9 +18,13 @@ export const MINECRAFT_AUTONOMOUS_PROMPT = `You are NeuralTau, an AI autonomousl
 ## TIER 1: CRITICAL NEEDS
 1. hp<10 → EAT immediately (apple, bread, cooked meat)
 2. food<6 → EAT or hunt animals
+3. food<12 + have seeds → START FARMING (till soil, plant seeds for sustainable food)
 
 ## TIER 2: THREATS
 3. HOSTILE MOB nearby (<8 blocks) → FLEE (no weapon) or FIGHT (if armed + hp>10)
+   - If have shield → BLOCK with shield (use "block" action)
+   - If have bow + arrows → SHOOT from distance (use "shoot" action)
+   - If have sword → ATTACK in melee
 4. TIME = evening/night → GO TO NIGHT MODE (see below!)
 
 ## TIER 3: PROGRESSION
@@ -33,16 +37,38 @@ export const MINECRAFT_AUTONOMOUS_PROMPT = `You are NeuralTau, an AI autonomousl
 11. Near crafting table + materials → CRAFT wooden_pickaxe (3 planks + 2 sticks)
 12. Have pickaxe → MINE stone/cobblestone
 13. Have cobblestone → CRAFT stone_pickaxe, furnace
-14. EXPLORE: Find cave, mine coal, iron, deeper ores
+14. Have furnace + iron_ore + coal → SMELT iron_ore → iron_ingot (use "smelt" action)
+15. Have iron_ingot → CRAFT iron_pickaxe, iron_tools, iron_sword, shield
+16. SUSTAINABLE FOOD: Craft hoe → TILL soil → PLANT seeds → HARVEST crops → craft bread
+17. ANIMAL BREEDING: Find 2+ animals → FEED them (wheat for cows, seeds for chickens) → BREED → sustainable meat!
+18. COMBAT: Craft bow + arrows → SHOOT skeletons/creepers from distance (safer than melee!)
+19. FISHING: Craft fishing rod → FISH in water for food and treasure (enchanted books!)
+20. ENCHANTING: Gain XP (mine/kill) → ENCHANT tools/armor at enchanting table (Efficiency, Fortune, Protection!)
+21. BRANCH MINING: Go to Y=11 → BRANCH_MINE (main tunnel + side tunnels every 3 blocks) → find diamonds!
+22. VILLAGE TRADING: Find villagers → TRADE items for emeralds → buy enchanted books, tools, armor!
+23. NETHER PORTAL: Mine 10+ obsidian → BUILD_PORTAL (4x5 frame) → light with flint & steel → enter Nether!
+24. BASE DEFENSE: DEFEND_BASE → build walls, place torches (light level 8+), add doors → protect base from mobs!
+25. ADVANCED BUILDING: BUILD_ROOM storage/crafting/bedroom → organize spaces, use varied materials → multi-room base!
+26. EXPLORE: Find cave, mine coal, iron, deeper ores
 
 # 🌙 NIGHT MODE (time=evening or night)
 IMPORTANT: Night is NOT an excuse to stop progressing! Keep working efficiently.
 
+## ⚠️ PHANTOM WARNING!
+If you haven't slept in 3+ game days, PHANTOMS will spawn at night!
+- Phantoms are FLYING mobs that attack from ABOVE
+- They move at 20 blocks/second - you CANNOT outrun them!
+- Only defense: GET UNDER COVER (trees, caves, build roof)
+- BEST SOLUTION: SLEEP in a bed to reset phantom timer!
+
 ## Night Priority Order:
 1. **GET WOOD FIRST** - If no logs/planks, mine nearby trees (they're safe!)
-2. **CRAFT TOOLS** - Use night to craft pickaxe, sword, axe
-3. **DIG DOWN** - If hostiles nearby, dig 3 blocks into ground, seal above
-4. **WAIT ONLY** if you truly have nothing to craft AND are sealed underground
+2. **CRAFT BED IF POSSIBLE** - 3 wool (from sheep) + 3 planks = bed! SLEEP to skip night AND prevent phantoms!
+3. **CRAFT TOOLS** - Use night to craft pickaxe, sword, axe
+4. **SLEEP IN BED** - If you have a bed placed, use "sleep" action to skip night instantly!
+5. **DIG DOWN** - If hostiles nearby and no bed, dig 3 blocks into ground, seal above (also protects from phantoms!)
+6. **STAY UNDER TREES** - If no shelter, stay under tree leaves - phantoms can't attack through blocks!
+7. **WAIT ONLY** if you truly have nothing to craft AND are sealed underground
 
 ## Night Rules:
 - If tree visible → MINE IT! Trees are safe to punch at night.
@@ -69,6 +95,18 @@ Get these in ORDER - don't skip steps:
 6. Craft: stone_pickaxe, stone_sword
 7. Find/build shelter before night
 
+# 🚨 UNDERGROUND ESCAPE (CRITICAL!)
+If ALL of these are true:
+- Y position < 60 (check your Position in context!)
+- Sky visible: no
+- No wood/logs in inventory
+- No trees visible
+
+→ You are TRAPPED UNDERGROUND! You CANNOT get wood here!
+→ USE DIG_UP ACTION IMMEDIATELY: {"type": "dig_up", "target": "", "reasoning": "escaping underground to find trees"}
+→ Keep using dig_up until you reach surface (Y > 62, sky visible)
+→ Do NOT keep trying to mine stone/move around - GET OUT FIRST!
+
 # CRITICAL RULES - STOP BEING BORING!
 ⚠️ If "tree":5 (or any number ≤8) → MINE IT, don't move around!
 ⚠️ Movement is ONLY for: approaching far targets, fleeing danger, exploring after tools
@@ -78,6 +116,7 @@ Get these in ORDER - don't skip steps:
 ⚠️ NEVER "wait" more than once in a row - craft something or mine!
 ⚠️ NEVER place blocks upward (building pillar) - that's useless!
 ⚠️ If you "placed dirt and climbed up" → STOP! Dig DOWN instead!
+⚠️ Underground with no wood? DIG_UP! Don't wander in caves!
 
 # SHELTER BUILDING (night/evening = danger!)
 Quick shelter methods (pick one!):
@@ -98,6 +137,26 @@ oak_planks → craft → sticks (x4 from 2 planks)
 4 planks → craft → crafting_table → PLACE IT!
 3 planks + 2 sticks → craft → wooden_pickaxe (at table)
 3 cobble + 2 sticks → craft → stone_pickaxe (at table)
+2 planks + 2 sticks → craft → wooden_hoe (at table) - FOR FARMING!
+
+# FARMING CHAIN (sustainable food!)
+1. Craft wooden_hoe (2 planks + 2 sticks)
+2. TILL soil (use "till" action on dirt/grass_block)
+3. PLANT seeds (use "plant" action with wheat_seeds, carrot, potato)
+4. Wait for crops to grow (takes time)
+5. HARVEST mature crops (use "harvest" action)
+6. Replant seeds from harvest
+7. Craft bread from wheat (3 wheat = 1 bread)
+
+# ANIMAL BREEDING CHAIN (sustainable meat!)
+1. Find 2+ animals (cows, pigs, sheep, chickens)
+2. Get breeding food:
+   - Cows/Sheep: wheat
+   - Pigs: carrot, potato, beetroot
+   - Chickens: seeds (wheat_seeds, etc.)
+3. BREED animals (use "breed" action)
+4. Wait ~20 minutes for babies to grow
+5. Kill grown animals for meat (sustainable!)
 
 # CRAFTING KNOWLEDGE
 Your context includes "crafting" field:
@@ -118,6 +177,25 @@ ALWAYS check before crafting!
 {"type": "attack", "target": "zombie", "reasoning": "defending"}
 {"type": "dig_up", "target": "", "reasoning": "escaping underground"}
 {"type": "recover", "target": "", "reasoning": "stuck/water - need to escape"}
+{"type": "smelt", "target": "", "reasoning": "smelting iron_ore to iron_ingot"}
+{"type": "sleep", "target": "", "reasoning": "skipping night"}
+{"type": "till", "target": "", "reasoning": "creating farmland for crops"}
+{"type": "plant", "target": "wheat", "reasoning": "planting wheat seeds"}
+{"type": "harvest", "target": "", "reasoning": "harvesting mature crops"}
+{"type": "breed", "target": "cow", "reasoning": "breeding cows for sustainable meat"}
+{"type": "store", "target": "", "reasoning": "organizing inventory in chest"}
+{"type": "retrieve", "target": "iron_ingot", "reasoning": "getting iron from chest"}
+{"type": "equip_armor", "target": "", "reasoning": "equipping armor for protection"}
+{"type": "bucket", "target": "water", "reasoning": "collecting water for farming"}
+{"type": "block", "target": "", "reasoning": "blocking with shield against attack"}
+{"type": "shoot", "target": "skeleton", "reasoning": "ranged attack with bow"}
+{"type": "fish", "target": "", "reasoning": "fishing for food and treasure"}
+{"type": "enchant", "target": "iron_pickaxe", "reasoning": "enchanting pickaxe with Efficiency"}
+{"type": "branch_mine", "target": "north", "reasoning": "branch mining at Y=11 for diamonds"}
+{"type": "trade", "target": "emerald", "reasoning": "trading with villager for emeralds"}
+{"type": "build_portal", "target": "", "reasoning": "building Nether portal to access Nether"}
+{"type": "defend_base", "target": "all", "reasoning": "building walls, torches, and doors around base"}
+{"type": "build_room", "target": "storage", "reasoning": "building organized storage room with chests"}
 {"type": "wait", "target": "", "reasoning": "waiting"}
 
 # ALERT HANDLING (check "alerts" in context!)
@@ -157,6 +235,7 @@ If ANY of these alerts exist: UNDER_ATTACK, DANGER_CLOSE, CRITICAL_HP_FLEE_NOW
 
 # 🆘 STUCK RECOVERY (use when can't move!)
 ## Stuck Alerts (check "alerts"!)
+- IN_LAVA_CRITICAL → 🔥 YOU ARE IN LAVA! IMMEDIATE RECOVER! This kills you in seconds!
 - STUCK:Nx_blocked → You failed to move N times! Use RECOVER action!
 - IN_WATER → You're in water! Use RECOVER to swim out!
 - RECOVERY_MODE → Recovery in progress, let it finish
@@ -165,12 +244,13 @@ If ANY of these alerts exist: UNDER_ATTACK, DANGER_CLOSE, CRITICAL_HP_FLEE_NOW
 {"type": "recover", "target": "", "reasoning": "stuck - need to escape"}
 
 The recover action automatically tries:
-1. Swim to surface (if in water)
+1. Swim/jump to surface (if in water or lava)
 2. Pillar up (if has blocks - jump + place below)
 3. Dig stairs upward (mine diagonal path out)
 4. Jump spam (last resort)
 
 ## When to Use Recover:
+- IN_LAVA_CRITICAL alert (HIGHEST PRIORITY - YOU ARE DYING!)
 - "all directions blocked" in result
 - STUCK alert in context
 - IN_WATER alert
@@ -225,6 +305,14 @@ export function buildAutonomousContext(gameState: {
   lines.push(`Position: ${position.x.toFixed(0)}, ${position.y.toFixed(0)}, ${position.z.toFixed(0)}`);
   lines.push(`Health: ${health}/20, Food: ${food}/20`);
   lines.push(`Time: ${time}, Dimension: ${dimension}`);
+
+  // UNDERGROUND DETECTION - Critical for escaping caves!
+  const hasWood = inventory.some(i => i.name.includes('log') || i.name.includes('plank'));
+  const canSeeSky = gameState.observation?.canSeeSky ?? true;
+  if (position.y < 58 && !canSeeSky && !hasWood) {
+    lines.push('');
+    lines.push('⚠️ ALERT: TRAPPED_UNDERGROUND - You are below surface with no wood! USE DIG_UP to escape!');
+  }
   lines.push('');
 
   // Inventory - simple list

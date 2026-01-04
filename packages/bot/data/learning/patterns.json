@@ -1,0 +1,423 @@
+{
+  "version": 2,
+  "lastUpdated": "2026-01-03T19:40:11.275Z",
+  "config": {
+    "minAttempts": 3,
+    "minConfidence": 0.4,
+    "decayHalfLifeDays": 7,
+    "maxPatterns": 200
+  },
+  "patterns": [
+    {
+      "id": "move:east",
+      "trigger": {
+        "nearBlocks": [
+          "stone"
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "move",
+        "target": "east"
+      },
+      "stats": {
+        "attempts": 49,
+        "successes": 27,
+        "avgDurationMs": 12809,
+        "firstSeen": 1767467698388,
+        "lastSeen": 1767469100750,
+        "lastSuccess": 1767469060511
+      },
+      "confidence": 0.4131486679967811,
+      "decayedScore": 0.4130963377174109,
+      "reliability": "low"
+    },
+    {
+      "id": "place:crafting_table",
+      "trigger": {
+        "hasItems": [
+          "birch_log",
+          "stick",
+          "birch_planks"
+        ],
+        "nearBlocks": [
+          "grass_block",
+          "dirt",
+          "stone"
+        ],
+        "nearEntities": [
+          "item"
+        ],
+        "timeOfDay": "day",
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "place",
+        "target": "crafting_table"
+      },
+      "stats": {
+        "attempts": 18,
+        "successes": 18,
+        "avgDurationMs": 14443,
+        "firstSeen": 1767460748468,
+        "lastSeen": 1767460762335,
+        "lastSuccess": 1767460762335
+      },
+      "confidence": 0.8241154494176252,
+      "decayedScore": 0.8161739411680485,
+      "reliability": "high"
+    },
+    {
+      "id": "recover:",
+      "trigger": {
+        "hasItems": [
+          "diamond_axe"
+        ],
+        "nearBlocks": [
+          "stone",
+          "water",
+          "diorite"
+        ],
+        "underground": true,
+        "healthRange": [
+          0,
+          10
+        ]
+      },
+      "action": {
+        "type": "recover",
+        "target": ""
+      },
+      "stats": {
+        "attempts": 175,
+        "successes": 110,
+        "avgDurationMs": 11127,
+        "firstSeen": 1767467716450,
+        "lastSeen": 1767469143320,
+        "lastSuccess": 1767469081570
+      },
+      "confidence": 0.5549389456074979,
+      "decayedScore": 0.554895727734557,
+      "reliability": "medium"
+    },
+    {
+      "id": "move:south",
+      "trigger": {
+        "hasItems": [
+          "diamond_axe"
+        ],
+        "nearBlocks": [
+          "stone",
+          "gravel",
+          "copper_ore"
+        ],
+        "underground": true,
+        "healthRange": [
+          0,
+          10
+        ]
+      },
+      "action": {
+        "type": "move",
+        "target": "south"
+      },
+      "stats": {
+        "attempts": 25,
+        "successes": 20,
+        "avgDurationMs": 14120,
+        "firstSeen": 1767466887825,
+        "lastSeen": 1767468446759,
+        "lastSuccess": 1767467937848
+      },
+      "confidence": 0.6086866446346176,
+      "decayedScore": 0.6081535506511235,
+      "reliability": "medium"
+    },
+    {
+      "id": "craft:birch_planks",
+      "trigger": {
+        "hasItems": [
+          "stick",
+          "birch_planks",
+          "diamond_axe"
+        ],
+        "nearBlocks": [
+          "grass_block",
+          "dirt",
+          "grass"
+        ],
+        "timeOfDay": "day",
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "craft",
+        "target": "birch_planks"
+      },
+      "stats": {
+        "attempts": 11,
+        "successes": 8,
+        "avgDurationMs": 26366,
+        "firstSeen": 1767460511977,
+        "lastSeen": 1767460541424,
+        "lastSuccess": 1767460541424
+      },
+      "confidence": 0.4343497069897538,
+      "decayedScore": 0.43005524277099155,
+      "reliability": "low"
+    },
+    {
+      "id": "move:west",
+      "trigger": {
+        "hasItems": [
+          "diamond_axe"
+        ],
+        "nearBlocks": [
+          "granite"
+        ],
+        "timeOfDay": "day",
+        "underground": true
+      },
+      "action": {
+        "type": "move",
+        "target": "west"
+      },
+      "stats": {
+        "attempts": 25,
+        "successes": 25,
+        "avgDurationMs": 12725,
+        "firstSeen": 1767467865773,
+        "lastSeen": 1767468584377,
+        "lastSuccess": 1767468584377
+      },
+      "confidence": 0.8668035060468212,
+      "decayedScore": 0.8661809546426485,
+      "reliability": "high"
+    },
+    {
+      "id": "move:north",
+      "trigger": {
+        "nearBlocks": [
+          "grass_block",
+          "dirt",
+          "stone"
+        ],
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "move",
+        "target": "north"
+      },
+      "stats": {
+        "attempts": 31,
+        "successes": 22,
+        "avgDurationMs": 6403,
+        "firstSeen": 1767468599449,
+        "lastSeen": 1767468999429,
+        "lastSuccess": 1767468999429
+      },
+      "confidence": 0.5340734004245933,
+      "decayedScore": 0.533943747542669,
+      "reliability": "medium"
+    },
+    {
+      "id": "place:dirt",
+      "trigger": {
+        "hasItems": [
+          "dirt"
+        ],
+        "nearBlocks": [
+          "stone",
+          "dirt",
+          "grass_block"
+        ],
+        "timeOfDay": "night",
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "place",
+        "target": "dirt"
+      },
+      "stats": {
+        "attempts": 4,
+        "successes": 4,
+        "avgDurationMs": 13844,
+        "firstSeen": 1767466116733,
+        "lastSeen": 1767466131403,
+        "lastSuccess": 1767466131403
+      },
+      "confidence": 0.5100999795960008,
+      "decayedScore": 0.5083026182481211,
+      "reliability": "uncertain"
+    },
+    {
+      "id": "mine:grass_block",
+      "trigger": {
+        "hasItems": [
+          "dirt",
+          "stick",
+          "sand"
+        ],
+        "nearBlocks": [
+          "grass_block",
+          "dirt",
+          "stone"
+        ],
+        "timeOfDay": "dawn",
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "mine",
+        "target": "grass_block"
+      },
+      "stats": {
+        "attempts": 12,
+        "successes": 9,
+        "avgDurationMs": 57075,
+        "firstSeen": 1767462818123,
+        "lastSeen": 1767462890151,
+        "lastSuccess": 1767462890151
+      },
+      "confidence": 0.4676896608793401,
+      "decayedScore": 0.46431372969233986,
+      "reliability": "low"
+    },
+    {
+      "id": "mine:dirt",
+      "trigger": {
+        "nearBlocks": [
+          "stone",
+          "dirt",
+          "grass_block"
+        ],
+        "nearEntities": [
+          "item",
+          "arrow"
+        ],
+        "timeOfDay": "night",
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "mine",
+        "target": "dirt"
+      },
+      "stats": {
+        "attempts": 5,
+        "successes": 5,
+        "avgDurationMs": 94437,
+        "firstSeen": 1767466061926,
+        "lastSeen": 1767466100557,
+        "lastSuccess": 1767466100557
+      },
+      "confidence": 0.565508505247919,
+      "decayedScore": 0.5634959883498502,
+      "reliability": "low"
+    },
+    {
+      "id": "mine:oak_log",
+      "trigger": {
+        "timeOfDay": "day",
+        "healthRange": [
+          15,
+          20
+        ],
+        "foodRange": [
+          15,
+          20
+        ]
+      },
+      "action": {
+        "type": "mine",
+        "target": "oak_log"
+      },
+      "stats": {
+        "attempts": 28,
+        "successes": 28,
+        "avgDurationMs": 27758,
+        "firstSeen": 1767464833460,
+        "lastSeen": 1767465047228,
+        "lastSuccess": 1767465047228
+      },
+      "confidence": 0.8793527963418923,
+      "decayedScore": 0.875166243598553,
+      "reliability": "high"
+    },
+    {
+      "id": "dig_up:",
+      "trigger": {
+        "hasItems": [
+          "diamond_axe"
+        ],
+        "nearBlocks": [
+          "stone",
+          "granite",
+          "andesite"
+        ],
+        "underground": true,
+        "healthRange": [
+          0,
+          10
+        ]
+      },
+      "action": {
+        "type": "dig_up",
+        "target": ""
+      },
+      "stats": {
+        "attempts": 124,
+        "successes": 70,
+        "avgDurationMs": 13191,
+        "firstSeen": 1767466858272,
+        "lastSeen": 1767468549182,
+        "lastSuccess": 1767468549182
+      },
+      "confidence": 0.4766059129009367,
+      "decayedScore": 0.4762443970550563,
+      "reliability": "low"
+    }
+  ]
+}

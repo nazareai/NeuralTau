@@ -8,6 +8,7 @@ import { config, streamingConfig } from './config.js';
 import { TauWebSocketServer } from './websocket-server.js';
 import { emotionManager } from './ai/emotion-manager.js';
 import { initializeStreaming, shutdownStreaming, TwitchClient, XClient, ChatManager, ChatResponder } from './streaming/index.js';
+import { initializeLearningSystem, shutdownLearningSystem, getLearningSystem } from './ai/learning-system.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -128,6 +129,31 @@ class TauBot {
     logger.info(`AI Model: ${config.ai.defaultModel}`);
     logger.info(`Vision Model: ${config.ai.visionModel}`);
     logger.info(`Game Mode: ${config.game.mode}`);
+
+    // Initialize 3-tier learning system (hot/warm/cold memory + pattern learning)
+    try {
+      await initializeLearningSystem({
+        dataDir: 'data/learning',
+        hotMemory: {
+          maxEntries: 50,
+          flushIntervalMs: 30000, // 30 seconds
+        },
+        warmStorage: {
+          maxEntriesPerFile: 1000,
+          retentionDays: 7,
+        },
+        patternLearner: {
+          minAttempts: 3,
+          minConfidence: 0.4,
+          decayHalfLifeDays: 7,
+          maxPatterns: 200,
+        },
+      });
+      logger.info('✅ Learning system initialized (3-tier architecture)');
+    } catch (error) {
+      logger.error('Failed to initialize learning system', { error });
+      // Continue without learning system - not fatal
+    }
 
     // Initialize game
     try {
@@ -351,6 +377,14 @@ class TauBot {
 
     // Save viewer memory
     viewerMemory.shutdown();
+
+    // Shutdown learning system (flushes data, extracts final patterns, creates archives)
+    try {
+      await shutdownLearningSystem();
+      logger.info('✅ Learning system shutdown complete');
+    } catch (error) {
+      logger.error('Failed to shutdown learning system', { error });
+    }
 
     // Close WebSocket server
     this.wsServer.close();
@@ -956,11 +990,12 @@ Respond with ONLY the message.`;
 
       // Broadcast held item with action state for hand overlay
       const heldItem = minecraftGame.getHeldItem();
-      let itemAction: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' = 'idle';
+      let itemAction: 'idle' | 'mining' | 'attacking' | 'eating' | 'placing' | 'crafting' = 'idle';
       if (action.type === 'mine' || action.type === 'dig_up') itemAction = 'mining';
       else if (action.type === 'attack') itemAction = 'attacking';
       else if (action.type === 'eat') itemAction = 'eating';
       else if (action.type === 'place') itemAction = 'placing';
+      else if (action.type === 'craft') itemAction = 'crafting';
 
       this.wsServer.broadcastHeldItem({
         name: heldItem.name,

@@ -15,8 +15,12 @@ import { decisionLogger, DecisionLogEntry } from './decision-logger.js';
 import { emotionManager } from './emotion-manager.js';
 import { experienceMemory } from './experience-memory.js';
 import { buildCraftableItemsContext, getSuggestedCraft } from '../games/crafting-helper.js';
+import { getLearningSystem, LearningSystem } from './learning-system.js';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// AI decision timeout - if AI takes longer than this, use fallback
+const AI_DECISION_TIMEOUT_MS = 8000; // 8 seconds max - viewers will leave after this!
 
 // Check if autonomous mode is enabled
 const AUTONOMOUS_MODE = process.env.AUTONOMOUS_MODE === 'true';
@@ -134,6 +138,9 @@ export class AIBrain {
     context: DecisionLogEntry['context'];
     decision: DecisionLogEntry['decision'];
   } | null = null;
+  // Learning system integration - track state for learning
+  private lastGameState: GameState | null = null;
+  private lastDecisionTime: number = 0;
 
   constructor(customSystemPrompt?: string) {
     // Use ADVANCED Minecraft-specific prompt if in Minecraft mode
@@ -250,6 +257,25 @@ export class AIBrain {
       historySize: this.actionHistory.length,
     });
 
+    // === NEW LEARNING SYSTEM INTEGRATION ===
+    // Record to the three-tier learning architecture if available
+    const learningSystem = getLearningSystem();
+    if (learningSystem && this.lastGameState) {
+      const meta = this.lastGameState.metadata as any;
+      const compactContext = learningSystem.buildCompactContext(meta);
+
+      learningSystem.recordAction(
+        { type: action.type, target: action.target || '' },
+        compactContext,
+        success,
+        Date.now() - (this.lastDecisionTime || Date.now()),
+        {
+          reason: this.pendingDecision?.decision.reasoning,
+          errorMsg: success ? undefined : result.substring(0, 200),
+        }
+      );
+    }
+
     // Log to decision logger for pattern learning (autonomous mode)
     if (AUTONOMOUS_MODE && this.pendingDecision) {
       decisionLogger.logDecision(
@@ -304,6 +330,39 @@ export class AIBrain {
     }
 
     return { isRepeating: false };
+  }
+
+  /**
+   * Get action types that have failed multiple times recently
+   * Used by fallback to avoid suggesting actions that keep failing
+   */
+  public getRecentlyFailedActionTypes(minFailures: number = 3): string[] {
+    const failureCounts: Record<string, number> = {};
+
+    // Count failures per action type in recent history
+    for (const entry of this.actionHistory) {
+      if (!entry.success) {
+        const actionType = entry.action.type;
+        failureCounts[actionType] = (failureCounts[actionType] || 0) + 1;
+      }
+    }
+
+    // Return action types that failed >= minFailures times
+    return Object.entries(failureCounts)
+      .filter(([_, count]) => count >= minFailures)
+      .map(([actionType, _]) => actionType);
+  }
+
+  /**
+   * Get the most recent failing action type (for targeted recovery)
+   */
+  public getMostRecentFailingActionType(): string | null {
+    for (let i = this.actionHistory.length - 1; i >= 0; i--) {
+      if (!this.actionHistory[i].success) {
+        return this.actionHistory[i].action.type;
+      }
+    }
+    return null;
   }
 
   /**
@@ -524,8 +583,23 @@ export class AIBrain {
       }
     }
 
-    // Check for hostile mobs
-    const hostileMobs = ['zombie', 'skeleton', 'creeper', 'spider', 'enderman', 'witch', 'pillager'];
+    // Check for hostile mobs (comprehensive list for all dimensions)
+    const hostileMobs = [
+      // Overworld common
+      'zombie', 'skeleton', 'creeper', 'spider', 'enderman', 'witch', 'slime',
+      // Overworld variants
+      'drowned', 'husk', 'stray', 'cave_spider', 'phantom', 'silverfish',
+      // Pillagers & raids
+      'pillager', 'vindicator', 'evoker', 'ravager', 'vex', 'illusioner',
+      // Nether
+      'blaze', 'ghast', 'magma_cube', 'wither_skeleton', 'hoglin', 'piglin_brute', 'zoglin',
+      // End
+      'shulker', 'endermite',
+      // Bosses
+      'wither', 'ender_dragon', 'elder_guardian', 'guardian', 'warden',
+      // Hostile when provoked
+      'zombified_piglin', 'polar_bear', 'iron_golem', 'bee' // These attack when provoked
+    ];
     const nearbyHostile = meta.nearbyEntities?.find((e: string) =>
       hostileMobs.some(h => e.toLowerCase().includes(h))
     );
@@ -560,10 +634,16 @@ export class AIBrain {
       }
     }
 
-    // === STUCK/WATER ALERTS ===
+    // === STUCK/WATER/LAVA ALERTS ===
     const stuckInfo = meta.stuckInfo;
     if (stuckInfo) {
-      if (stuckInfo.inWater) {
+      if (stuckInfo.inLava) {
+        // LAVA IS CRITICAL - highest priority environmental danger!
+        alerts.push('IN_LAVA_CRITICAL');
+      } else if (stuckInfo.headInWater) {
+        // HEAD IN WATER = DROWNING! This is critical!
+        alerts.push('DROWNING_CRITICAL');
+      } else if (stuckInfo.inWater) {
         alerts.push('IN_WATER');
       }
       if (stuckInfo.isStuck) {
@@ -580,8 +660,14 @@ export class AIBrain {
     if (meta.inventory?.length > 0) {
       context.inv = meta.inventory.slice(0, 8).map((i: any) => `${i.name}:${i.count}`);
 
-      // Check if has food
-      const foodItems = ['beef', 'pork', 'chicken', 'bread', 'apple', 'carrot', 'potato', 'steak', 'cooked'];
+      // Check if has food (comprehensive list for accurate detection)
+      const foodItems = [
+        'cooked_beef', 'cooked_porkchop', 'cooked_chicken', 'cooked_mutton', 'cooked_rabbit',
+        'cooked_salmon', 'cooked_cod', 'steak', 'bread', 'apple', 'golden_apple', 'enchanted_golden_apple',
+        'carrot', 'golden_carrot', 'baked_potato', 'beetroot', 'melon_slice', 'sweet_berries', 'glow_berries',
+        'pumpkin_pie', 'cookie', 'cake', 'mushroom_stew', 'rabbit_stew', 'beetroot_soup', 'suspicious_stew',
+        'dried_kelp', 'honey_bottle', 'chorus_fruit', 'rotten_flesh' // emergency food
+      ];
       const hasFood = meta.inventory.some((i: any) => foodItems.some(f => i.name.includes(f)));
       if (hasFood) context.hasFood = true;
 
@@ -736,12 +822,126 @@ export class AIBrain {
   }
 
   /**
+   * Fast-path decisions that skip AI for obvious situations
+   * Returns null if no fast decision is possible
+   */
+  private getFastPathDecision(gameState: GameState): GameAction | null {
+    const meta = gameState.metadata as any;
+    const hp = meta.health || 20;
+    const food = meta.food || 20;
+    const inventory = meta.inventory || [];
+    const stuckInfo = meta.stuckInfo;
+    const healthAlert = meta.healthAlert;
+
+    // === FAST PATH 1: CRITICAL HEALTH + HAS FOOD = EAT ===
+    // Comprehensive food list - prioritizes high-saturation foods first
+    const allFoodItems = [
+      // Best foods (high saturation) - eat these first!
+      'golden_apple', 'enchanted_golden_apple', 'golden_carrot', 'steak', 'cooked_beef',
+      'cooked_porkchop', 'cooked_mutton', 'cooked_salmon', 'rabbit_stew', 'mushroom_stew',
+      // Good foods
+      'cooked_chicken', 'cooked_rabbit', 'cooked_cod', 'bread', 'baked_potato', 'beetroot_soup',
+      'pumpkin_pie', 'suspicious_stew',
+      // Okay foods
+      'apple', 'carrot', 'melon_slice', 'sweet_berries', 'glow_berries', 'beetroot', 'cookie',
+      'dried_kelp', 'honey_bottle', 'cake', 'chorus_fruit',
+      // Emergency foods (low saturation or negative effects)
+      'raw_beef', 'raw_porkchop', 'raw_chicken', 'raw_mutton', 'raw_rabbit', 'raw_cod', 'raw_salmon',
+      'porkchop', 'beef', 'chicken', 'mutton', 'rabbit', // raw variants
+      'rotten_flesh', 'spider_eye', 'poisonous_potato' // last resort!
+    ];
+
+    if (hp < 8) {
+      const hasFood = inventory.find((i: any) => allFoodItems.some(f => i.name.includes(f)));
+      if (hasFood) {
+        logger.info('[FAST-PATH] Critical HP, eating immediately', { hp, food: hasFood.name });
+        return { type: 'eat', target: hasFood.name, reasoning: `[INSTANT] Critical HP (${hp.toFixed(0)}), eating ${hasFood.name}` };
+      }
+    }
+
+    // === FAST PATH 2: IN LAVA = IMMEDIATE RECOVER (CRITICAL!) ===
+    // Lava is the most dangerous - triggers instant recovery regardless of other state
+    if (stuckInfo?.inLava && !stuckInfo.inRecovery) {
+      logger.warn('[FAST-PATH] 🔥 IN LAVA! Triggering emergency recovery');
+      return { type: 'recover', target: '', reasoning: '[CRITICAL] In LAVA! Emergency escape!' };
+    }
+
+    // === FAST PATH 2b: HEAD IN WATER = DROWNING (CRITICAL!) ===
+    // Drowning kills quickly - trigger recovery immediately
+    // FIX: Skip if we just escaped water recently (prevents infinite loop when slipping back in)
+    if (stuckInfo?.headInWater && !stuckInfo.inRecovery && !stuckInfo.recentlyEscapedWater) {
+      logger.warn('[FAST-PATH] 🏊 DROWNING! Head underwater - triggering emergency recovery');
+      return { type: 'recover', target: '', reasoning: '[CRITICAL] DROWNING! Head underwater!' };
+    }
+    if (stuckInfo?.headInWater && stuckInfo.recentlyEscapedWater) {
+      logger.info('[FAST-PATH] Skipping drowning trigger - recently escaped water (cooldown active)');
+    }
+
+    // === FAST PATH 3: STUCK 3+ TIMES = RECOVER ===
+    // But DON'T trigger if recovery is already in progress!
+    if (stuckInfo?.isStuck && stuckInfo.blockedMoves >= 3 && !stuckInfo.inRecovery) {
+      logger.info('[FAST-PATH] Severely stuck, triggering recovery', { blockedMoves: stuckInfo.blockedMoves });
+      return { type: 'recover', target: '', reasoning: `[INSTANT] Stuck ${stuckInfo.blockedMoves}x, recovering` };
+    }
+
+    // === FAST PATH 4: IN WATER = RECOVER ===
+    // But DON'T trigger if recovery is already in progress - let it finish!
+    // FIX: Also skip if recently escaped water (prevents infinite loop)
+    if (stuckInfo?.inWater && !stuckInfo.inRecovery && !stuckInfo.recentlyEscapedWater) {
+      logger.info('[FAST-PATH] In water, triggering recovery');
+      return { type: 'recover', target: '', reasoning: '[INSTANT] In water, need to escape' };
+    }
+
+    // If recovery IS in progress, skip all fast-paths and let it complete
+    if (stuckInfo?.inRecovery) {
+      logger.info('[FAST-PATH] Recovery in progress, skipping fast-path to let it complete');
+      return null;
+    }
+
+    // === FAST PATH 5: HUNGRY + HAS FOOD = EAT ===
+    if (food < 6) {
+      // Reuse the comprehensive food list from above
+      const hasFood = inventory.find((i: any) => allFoodItems.some(f => i.name.includes(f)));
+      if (hasFood) {
+        logger.info('[FAST-PATH] Hungry, eating', { food, item: hasFood.name });
+        return { type: 'eat', target: hasFood.name, reasoning: `[INSTANT] Hungry (${food}), eating ${hasFood.name}` };
+      }
+    }
+
+    // === FAST PATH 5: TREE WITHIN 4 BLOCKS + NO LOGS = MINE ===
+    const hasLogs = inventory.some((i: any) => i.name.includes('log'));
+    const nearestTree = meta.spatialObservation?.semantic?.nearestTree;
+    if (!hasLogs && nearestTree && nearestTree.distance <= 4) {
+      logger.info('[FAST-PATH] No logs, tree nearby, mining', { tree: nearestTree.type, distance: nearestTree.distance });
+      return { type: 'mine', target: nearestTree.type, reasoning: `[INSTANT] No wood, mining ${nearestTree.type} (${nearestTree.distance.toFixed(1)}m away)` };
+    }
+
+    // No fast path available - need AI decision
+    return null;
+  }
+
+  /**
    * AUTONOMOUS decision making - minimal prompt, trusts LLM reasoning
    */
   private async makeAutonomousDecision(
     gameState: GameState,
     recentChat: ChatMessage[] = []
   ): Promise<GameAction> {
+    // Track game state for learning system
+    this.lastGameState = gameState;
+    this.lastDecisionTime = Date.now();
+
+    // === TRY FAST PATH FIRST ===
+    // Skip AI entirely for obvious decisions (saves 8-40 seconds!)
+    const fastDecision = this.getFastPathDecision(gameState);
+    if (fastDecision) {
+      logger.info('[FAST-PATH] Skipping AI, using instant decision', {
+        action: fastDecision.type,
+        target: fastDecision.target,
+      });
+      return fastDecision;
+    }
+
     logger.info('[AUTONOMOUS] Making decision with minimal context');
 
     // Build simple context
@@ -899,6 +1099,24 @@ export class AIBrain {
       contextMessage = stuckWarning + '\n\n' + contextMessage;
     }
 
+    // === LEARNING SYSTEM INTEGRATION ===
+    // Add learned patterns and context from the three-tier learning system
+    const learningSystem = getLearningSystem();
+    if (learningSystem) {
+      const meta = gameState.metadata as any;
+      const compactContext = learningSystem.buildCompactContext(meta);
+      const learningContext = learningSystem.buildContextForAI(compactContext);
+      if (learningContext) {
+        contextMessage += '\n\n' + learningContext;
+      }
+
+      // Use learning system's stuck detection (more comprehensive)
+      const learnedStuckWarning = learningSystem.getStuckLoopWarning();
+      if (learnedStuckWarning && !stuckWarning) {
+        contextMessage = learnedStuckWarning + '\n\n' + contextMessage;
+      }
+    }
+
     // Add chat if any
     let fullContext = contextMessage;
     if (recentChat.length > 0) {
@@ -922,8 +1140,12 @@ export class AIBrain {
     try {
       const apiCallStart = Date.now();
 
-      // Autonomous mode uses minimal settings for speed
-      const response = await openRouterClient.chat(conversation, {
+      // === TIMEOUT-PROTECTED AI CALL ===
+      // If AI takes too long, use smart fallback to keep stream alive!
+      let response: { content: string; tokens: { total: number } };
+      let usedFallback = false;
+
+      const aiPromise = openRouterClient.chat(conversation, {
         maxTokens: 300,  // Reduced from 800 - we only need a short JSON response
         temperature: 0.1,  // Lower for more deterministic
         reasoning: {
@@ -932,7 +1154,33 @@ export class AIBrain {
         }
       });
 
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), AI_DECISION_TIMEOUT_MS);
+      });
+
+      const result = await Promise.race([aiPromise, timeoutPromise]);
+
+      if (result === null) {
+        // TIMEOUT! AI took too long - use smart fallback
+        usedFallback = true;
+        const fallbackAction = this.getSmartFallbackAction(gameState);
+        logger.warn('[AI-TIMEOUT] AI decision took too long, using fallback', {
+          timeoutMs: AI_DECISION_TIMEOUT_MS,
+          fallback: `${fallbackAction.type}:${fallbackAction.target || 'none'}`,
+        });
+        return fallbackAction;
+      }
+
+      response = result;
       const apiCallDuration = Date.now() - apiCallStart;
+      
+      // Log if AI was slow but didn't timeout
+      if (apiCallDuration > 5000) {
+        logger.warn('[AI-SLOW] AI decision was slow but completed', {
+          duration: `${apiCallDuration}ms`,
+          threshold: `${AI_DECISION_TIMEOUT_MS}ms`,
+        });
+      }
 
       // Parse action from response
       const action = this.parseGameAction(response.content);
@@ -1357,6 +1605,152 @@ export class AIBrain {
     ];
     this.actionHistory = [];
     logger.info('Conversation and action history reset');
+  }
+
+  /**
+   * Get a smart fallback action when AI times out
+   * This keeps the bot active and making progress while waiting for AI
+   *
+   * CRITICAL: This function must be LEARNING-AWARE to avoid suggesting
+   * actions that have been failing repeatedly. Without this check, the bot
+   * gets stuck in infinite loops (e.g., dig_up failing 10+ times).
+   */
+  private getSmartFallbackAction(gameState: GameState): GameAction {
+    const meta = gameState.metadata as any;
+    const hp = meta.health || 20;
+    const food = meta.food || 20;
+    const inventory = meta.inventory || [];
+    const spatial = meta.spatialObservation?.semantic;
+
+    // CRITICAL: Get recently failed actions to avoid suggesting them
+    // This prevents infinite loops like dig_up failing 10+ times
+    // Use learning system if available (more comprehensive), fallback to local history
+    const learningSystem = getLearningSystem();
+    const failedActionTypes = learningSystem
+      ? learningSystem.getRecentlyFailedActionTypes(3)
+      : this.getRecentlyFailedActionTypes(3);
+    const consecutiveFailures = learningSystem
+      ? learningSystem.getConsecutiveFailureCount()
+      : this.getConsecutiveFailures();
+    const mostRecentFailure = learningSystem
+      ? learningSystem.getMostRecentFailingActionType()
+      : this.getMostRecentFailingActionType();
+
+    // Log what we're avoiding
+    if (failedActionTypes.length > 0) {
+      logger.info('[FALLBACK] Avoiding recently failed actions', {
+        failedActions: failedActionTypes,
+        consecutiveFailures,
+        mostRecentFailure
+      });
+    }
+
+    // PRIORITY 0: If severely stuck (3+ consecutive failures), try targeted recovery
+    if (consecutiveFailures >= 3) {
+      // If dig_up is failing, bot needs blocks to pillar - mine nearby walls
+      if (mostRecentFailure === 'dig_up') {
+        logger.info('[FALLBACK] dig_up failing, suggesting mine nearby blocks for pillar materials');
+        return { type: 'mine', target: 'nearby', reasoning: '[FALLBACK] dig_up stuck - mining blocks to pillar up' };
+      }
+      // If movement is failing, try recover
+      if (mostRecentFailure === 'move') {
+        return { type: 'recover', target: '', reasoning: '[FALLBACK] Movement stuck, attempting recovery' };
+      }
+      // Generic stuck - try recover
+      return { type: 'recover', target: '', reasoning: `[FALLBACK] ${consecutiveFailures}x failures, attempting recovery` };
+    }
+
+    // Priority 1: SURVIVAL - Low health, need to eat
+    if (hp < 10 && !failedActionTypes.includes('eat')) {
+      // Comprehensive food list - prioritizes high-saturation foods
+      const fallbackFoodItems = [
+        'golden_apple', 'enchanted_golden_apple', 'golden_carrot', 'steak', 'cooked_beef',
+        'cooked_porkchop', 'cooked_mutton', 'cooked_salmon', 'rabbit_stew', 'mushroom_stew',
+        'cooked_chicken', 'cooked_rabbit', 'cooked_cod', 'bread', 'baked_potato', 'beetroot_soup',
+        'pumpkin_pie', 'apple', 'carrot', 'melon_slice', 'sweet_berries', 'glow_berries',
+        'beetroot', 'cookie', 'dried_kelp', 'rotten_flesh' // emergency
+      ];
+      const hasFood = inventory.find((i: any) => fallbackFoodItems.some(f => i.name.includes(f)));
+      if (hasFood) {
+        return { type: 'eat', target: hasFood.name, reasoning: '[FALLBACK] Low HP, eating to survive' };
+      }
+    }
+
+    // Priority 2: If no wood, look for trees (if mine isn't failing)
+    const hasLogs = inventory.some((i: any) => i.name.includes('log'));
+    const hasPlanks = inventory.some((i: any) => i.name.includes('planks'));
+
+    if (!hasLogs && !hasPlanks && !failedActionTypes.includes('mine')) {
+      // No wood - need to find/mine trees
+      if (spatial?.nearestTree && spatial.nearestTree.distance <= 5) {
+        return { type: 'mine', target: spatial.nearestTree.type, reasoning: '[FALLBACK] No wood, mining nearby tree' };
+      }
+      // Move toward tree if far (if move isn't failing)
+      if (spatial?.nearestTree && !failedActionTypes.includes('move')) {
+        const dirs = ['north', 'south', 'east', 'west'];
+        const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+        return { type: 'move', target: randomDir, reasoning: '[FALLBACK] Looking for trees' };
+      }
+    }
+
+    // Priority 3: If have logs but no planks, craft planks (if craft isn't failing)
+    if (hasLogs && !hasPlanks && !failedActionTypes.includes('craft')) {
+      const log = inventory.find((i: any) => i.name.includes('log'));
+      if (log) {
+        const plankType = log.name.replace('_log', '_planks');
+        return { type: 'craft', target: plankType, reasoning: '[FALLBACK] Have logs, crafting planks' };
+      }
+    }
+
+    // Priority 4: If have planks but no tools, try to craft (if craft isn't failing)
+    const hasPickaxe = inventory.some((i: any) => i.name.includes('pickaxe'));
+    const hasCraftingTable = inventory.some((i: any) => i.name === 'crafting_table');
+    const hasSticks = inventory.some((i: any) => i.name === 'stick');
+
+    if (hasPlanks && !hasSticks && !failedActionTypes.includes('craft')) {
+      return { type: 'craft', target: 'stick', reasoning: '[FALLBACK] Need sticks for tools' };
+    }
+
+    if (hasPlanks && !hasCraftingTable && !failedActionTypes.includes('craft') &&
+        inventory.filter((i: any) => i.name.includes('planks')).reduce((s: number, i: any) => s + i.count, 0) >= 4) {
+      return { type: 'craft', target: 'crafting_table', reasoning: '[FALLBACK] Need crafting table' };
+    }
+
+    // Priority 5: If underground, try to dig up - BUT ONLY IF DIG_UP ISN'T FAILING
+    const yPos = meta.position?.y;
+    if (yPos !== undefined && yPos < 50) {
+      if (!failedActionTypes.includes('dig_up')) {
+        return { type: 'dig_up', target: '', reasoning: '[FALLBACK] Underground, digging up to surface' };
+      } else {
+        // dig_up is failing - need to mine blocks for pillar materials or explore horizontally
+        logger.info('[FALLBACK] dig_up blacklisted, trying to mine nearby blocks or explore');
+        if (!failedActionTypes.includes('mine')) {
+          return { type: 'mine', target: 'nearby', reasoning: '[FALLBACK] dig_up failing - mining blocks to pillar up' };
+        }
+        // If mining also failing, try horizontal movement
+        if (!failedActionTypes.includes('move')) {
+          const dirs = ['north', 'south', 'east', 'west'];
+          const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+          return { type: 'move', target: randomDir, reasoning: '[FALLBACK] Stuck underground, exploring horizontally' };
+        }
+      }
+    }
+
+    // Priority 6: Default to random movement to explore (if move isn't failing)
+    if (!failedActionTypes.includes('move')) {
+      const directions = ['north', 'south', 'east', 'west'];
+      const badDirs = Array.from(this.badDirections.keys());
+      const safeDirs = directions.filter(d => !badDirs.includes(d));
+      const moveDir = safeDirs.length > 0
+        ? safeDirs[Math.floor(Math.random() * safeDirs.length)]
+        : directions[Math.floor(Math.random() * directions.length)];
+
+      return { type: 'move', target: moveDir, reasoning: '[FALLBACK] AI timeout, exploring' };
+    }
+
+    // Last resort: Everything seems to be failing, try recover
+    logger.warn('[FALLBACK] All common actions failing, forcing recovery', { failedActionTypes });
+    return { type: 'recover', target: '', reasoning: '[FALLBACK] All actions failing, attempting recovery' };
   }
 
   /**

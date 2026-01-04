@@ -1,6 +1,6 @@
 # NeuralTau
 
-Human-like AI Minecraft player with realistic perception and behavior.
+Human-like AI Minecraft player and streamer with auto-learning to achieve realistic perception and behavior.
 
 ## Features
 
