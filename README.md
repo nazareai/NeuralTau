@@ -2,6 +2,8 @@
 
 Human-like AI Minecraft player and streamer with auto-learning to achieve realistic perception and behavior.
 
+**TWITCH**: [https://twitch.com/neuraltau]https://twitch.com/neuraltau
+
 ## Features
 
 - **Field of View (FOV)** - 140° vision cone, can't see behind
