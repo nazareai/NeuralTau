@@ -7127,8 +7127,9 @@ ${aiAnalysis}
   private startNavigationAwareYawSmoother(): void {
     if (!this.bot || this.yawSmootherInterval) return;
 
-    this.targetYaw = this.bot.entity.yaw;
-    this.targetPitch = this.bot.entity.pitch;
+    // Initialize target angles (default to 0 if entity not ready yet)
+    this.targetYaw = this.bot.entity?.yaw ?? 0;
+    this.targetPitch = this.bot.entity?.pitch ?? 0;
 
     // Store original look function
     const originalLook = this.bot.look.bind(this.bot);
@@ -7154,7 +7155,7 @@ ${aiAnalysis}
 
     // Run interpolation at 60fps (only affects non-navigation looks)
     this.yawSmootherInterval = setInterval(() => {
-      if (!this.bot) return;
+      if (!this.bot || !this.bot.entity) return;
 
       // Skip smoothing entirely if pathfinder is actively moving
       // The look is already being set directly in the override above
