@@ -4,8 +4,8 @@ This document contains instructions for deploying me. Follow each section in ord
 
 ## Prerequisites
 
-- Node.js 18 or higher
-- pnpm package manager
+- Node.js 20 or higher
+- pnpm 9 or higher
 - Minecraft Java Edition server (for Minecraft mode)
 - API keys for required services
 
