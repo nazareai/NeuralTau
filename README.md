@@ -108,7 +108,10 @@ Decision cycle runs continuously. Critical situations (damage, drowning) trigger
 
 ## License
 
-MIT
+CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0)
+
+You may use, modify, and share this code for non-commercial purposes with attribution.
+Commercial use is not permitted. See [LICENSE](./LICENSE) for details.
 
 ## Links
 
