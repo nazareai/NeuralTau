@@ -2774,16 +2774,92 @@ export class MinecraftGame {
     const startY = Math.floor(this.bot.entity.position.y);
     logger.info('[SWIM] Starting swim to surface from Y=' + startY);
 
-    // Blocks we can mine to escape (soft blocks that break quickly)
+    // Blocks we can mine to escape - comprehensive list based on Minecraft Wiki hardness values
+    // Source: https://minecraft.wiki/w/Breaking, https://mcreator.net/wiki/list-hardness-values-blocks
     const mineableBlocks = new Set([
-      'dirt', 'grass_block', 'sand', 'gravel', 'clay', 'soul_sand', 'soul_soil',
-      'mud', 'moss_block', 'snow', 'powder_snow', 'cobweb', 'netherrack',
-      // All leaf types
-      'oak_leaves', 'birch_leaves', 'spruce_leaves', 'jungle_leaves',
+      // === INSTANT BREAK (Hardness 0) ===
+      'scaffolding', 'slime_block', 'honey_block', 'tnt',
+      'torch', 'wall_torch', 'soul_torch', 'soul_wall_torch', 'redstone_torch',
+      'redstone_wire', 'tripwire', 'tripwire_hook',
+      // Plants/crops
+      'grass', 'tall_grass', 'fern', 'large_fern', 'dead_bush',
+      'seagrass', 'tall_seagrass', 'kelp', 'kelp_plant',
+      'sugar_cane', 'bamboo', 'bamboo_sapling',
+      'wheat', 'carrots', 'potatoes', 'beetroots', 'sweet_berry_bush',
+      'nether_wart', 'nether_sprouts', 'warped_roots', 'crimson_roots',
+      'warped_fungus', 'crimson_fungus', 'hanging_roots',
+      'azalea', 'flowering_azalea', 'spore_blossom', 'moss_carpet',
+      'lily_pad', 'sea_pickle', 'glow_lichen',
+      // Flowers
+      'dandelion', 'poppy', 'blue_orchid', 'allium', 'azure_bluet',
+      'red_tulip', 'orange_tulip', 'white_tulip', 'pink_tulip',
+      'oxeye_daisy', 'cornflower', 'lily_of_the_valley', 'wither_rose',
+      'sunflower', 'lilac', 'rose_bush', 'peony', 'torchflower', 'pitcher_plant',
+      'pink_petals', 'cherry_sapling',
+      // Saplings
+      'oak_sapling', 'spruce_sapling', 'birch_sapling', 'jungle_sapling',
+      'acacia_sapling', 'dark_oak_sapling', 'mangrove_propagule',
+      // Mushrooms
+      'brown_mushroom', 'red_mushroom', 'mushroom_stem',
+
+      // === VERY SOFT (Hardness 0.1-0.3) ===
+      'snow', 'snow_block', 'powder_snow',
+      'vine', 'cave_vines', 'cave_vines_plant', 'weeping_vines', 'twisting_vines',
+      'cocoa',
+      // Leaves (all types)
+      'oak_leaves', 'spruce_leaves', 'birch_leaves', 'jungle_leaves',
       'acacia_leaves', 'dark_oak_leaves', 'mangrove_leaves', 'azalea_leaves',
       'flowering_azalea_leaves', 'cherry_leaves',
-      // Underwater blocks
-      'seagrass', 'tall_seagrass', 'kelp', 'kelp_plant',
+      // Mushroom blocks
+      'brown_mushroom_block', 'red_mushroom_block',
+      // Glass (breaks easily but needs nothing)
+      'glass', 'glass_pane', 'tinted_glass',
+      'white_stained_glass', 'orange_stained_glass', 'magenta_stained_glass',
+      'light_blue_stained_glass', 'yellow_stained_glass', 'lime_stained_glass',
+      'pink_stained_glass', 'gray_stained_glass', 'light_gray_stained_glass',
+      'cyan_stained_glass', 'purple_stained_glass', 'blue_stained_glass',
+      'brown_stained_glass', 'green_stained_glass', 'red_stained_glass', 'black_stained_glass',
+      'glowstone', 'sea_lantern', 'shroomlight',
+      'bee_nest',
+
+      // === SOFT (Hardness 0.4-0.5) - shovel preferred ===
+      'dirt', 'grass_block', 'dirt_path', 'coarse_dirt', 'rooted_dirt', 'podzol', 'mycelium',
+      'mud', 'muddy_mangrove_roots',
+      'sand', 'red_sand', 'suspicious_sand', 'suspicious_gravel',
+      'gravel',
+      'soul_sand', 'soul_soil',
+      'clay',
+      'farmland',
+      'netherrack',
+      'cactus', 'chorus_plant', 'chorus_flower',
+      'ice', 'packed_ice', 'blue_ice', 'frosted_ice',
+      'magma_block',
+      'hay_block',
+      'dried_kelp_block',
+      'moss_block', 'sculk', 'sculk_vein',
+      // Concrete powder (all colors)
+      'white_concrete_powder', 'orange_concrete_powder', 'magenta_concrete_powder',
+      'light_blue_concrete_powder', 'yellow_concrete_powder', 'lime_concrete_powder',
+      'pink_concrete_powder', 'gray_concrete_powder', 'light_gray_concrete_powder',
+      'cyan_concrete_powder', 'purple_concrete_powder', 'blue_concrete_powder',
+      'brown_concrete_powder', 'green_concrete_powder', 'red_concrete_powder', 'black_concrete_powder',
+
+      // === MEDIUM SOFT (Hardness 0.6-0.8) ===
+      'sponge', 'wet_sponge',
+      'honeycomb_block',
+      // Wool (all colors)
+      'white_wool', 'orange_wool', 'magenta_wool', 'light_blue_wool',
+      'yellow_wool', 'lime_wool', 'pink_wool', 'gray_wool', 'light_gray_wool',
+      'cyan_wool', 'purple_wool', 'blue_wool', 'brown_wool', 'green_wool', 'red_wool', 'black_wool',
+      // Carpet
+      'white_carpet', 'orange_carpet', 'magenta_carpet', 'light_blue_carpet',
+      'yellow_carpet', 'lime_carpet', 'pink_carpet', 'gray_carpet', 'light_gray_carpet',
+      'cyan_carpet', 'purple_carpet', 'blue_carpet', 'brown_carpet', 'green_carpet', 'red_carpet', 'black_carpet',
+      'moss_carpet',
+
+      // === SOFT ENOUGH (Hardness 1.0) ===
+      'packed_mud', 'melon', 'pumpkin', 'carved_pumpkin', 'jack_o_lantern',
+      'nether_wart_block', 'warped_wart_block',
     ]);
 
     // Also mine stone-type blocks if we have a pickaxe
@@ -2791,7 +2867,22 @@ export class MinecraftGame {
       item.name.includes('pickaxe')
     );
     if (hasPickaxe) {
-      ['stone', 'cobblestone', 'deepslate', 'sandstone', 'terracotta', 'andesite', 'diorite', 'granite'].forEach(b => mineableBlocks.add(b));
+      // Hardness 0.8 (sandstone types)
+      ['sandstone', 'red_sandstone', 'chiseled_sandstone', 'cut_sandstone',
+       'chiseled_red_sandstone', 'cut_red_sandstone', 'smooth_sandstone', 'smooth_red_sandstone',
+       // Hardness 1.5 (stone types)
+       'stone', 'cobblestone', 'mossy_cobblestone',
+       'andesite', 'diorite', 'granite', 'polished_andesite', 'polished_diorite', 'polished_granite',
+       'deepslate', 'cobbled_deepslate', 'polished_deepslate',
+       'tuff', 'calcite', 'dripstone_block', 'pointed_dripstone',
+       // Terracotta
+       'terracotta', 'white_terracotta', 'orange_terracotta', 'magenta_terracotta',
+       'light_blue_terracotta', 'yellow_terracotta', 'lime_terracotta', 'pink_terracotta',
+       'gray_terracotta', 'light_gray_terracotta', 'cyan_terracotta', 'purple_terracotta',
+       'blue_terracotta', 'brown_terracotta', 'green_terracotta', 'red_terracotta', 'black_terracotta',
+       // Nether
+       'basalt', 'polished_basalt', 'smooth_basalt', 'blackstone', 'polished_blackstone',
+      ].forEach(b => mineableBlocks.add(b));
     }
 
     // Hold jump to swim up
