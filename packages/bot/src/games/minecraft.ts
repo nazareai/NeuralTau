@@ -4331,10 +4331,73 @@ export class MinecraftGame {
         logger.warn(`[dig_up]   - Has placeable blocks: ${placeableBlocks.length > 0}`);
         logger.warn(`[dig_up]   - Surrounded by: N=${north?.name}, S=${south?.name}, E=${east?.name}, W=${west?.name}`);
 
-        if (blockName === 'air') {
-          if (placeableBlocks.length === 0) {
-            return `Stuck in vertical shaft at Y=${finalY}. Air above but NO BLOCKS to pillar up. Need to explore horizontally to find dirt/cobblestone, or mine blocks from walls.`;
+        // FIX: If stuck with air above and no blocks, MINE WALL BLOCKS to get materials!
+        if (blockName === 'air' && placeableBlocks.length === 0) {
+          logger.info(`[dig_up] Air above but no blocks - mining wall blocks to get materials!`);
+
+          // Find mineable wall blocks (at current Y and Y+1)
+          const currentPos = this.bot.entity.position;
+          const wallPositions = [
+            { pos: currentPos.offset(0, 0, -1), dir: 'N' },  // North at feet
+            { pos: currentPos.offset(0, 0, 1), dir: 'S' },   // South at feet
+            { pos: currentPos.offset(1, 0, 0), dir: 'E' },   // East at feet
+            { pos: currentPos.offset(-1, 0, 0), dir: 'W' },  // West at feet
+            { pos: currentPos.offset(0, 1, -1), dir: 'N+1' }, // North at head
+            { pos: currentPos.offset(0, 1, 1), dir: 'S+1' },  // South at head
+            { pos: currentPos.offset(1, 1, 0), dir: 'E+1' },  // East at head
+            { pos: currentPos.offset(-1, 1, 0), dir: 'W+1' }, // West at head
+          ];
+
+          // Blocks that drop placeable items when mined
+          const mineableWallBlocks = [
+            'dirt', 'grass_block', 'coarse_dirt', 'gravel', 'sand', 'clay',  // Soft - mine first
+            'cobblestone', 'mossy_cobblestone',  // Already placeable
+            'stone', 'deepslate', 'andesite', 'diorite', 'granite',  // Drop cobblestone/themselves
+            'copper_ore', 'iron_ore', 'coal_ore', 'gold_ore',  // Ores - harder but work
+            'netherrack', 'sandstone', 'red_sandstone',  // Various stone types
+          ];
+
+          let minedAny = false;
+          for (const { pos, dir } of wallPositions) {
+            const wallBlock = this.bot.blockAt(pos);
+            if (wallBlock && mineableWallBlocks.some(m => wallBlock.name.includes(m))) {
+              logger.info(`[dig_up] Mining wall block: ${wallBlock.name} at ${dir}`);
+              try {
+                await this.bot.lookAt(pos.offset(0.5, 0.5, 0.5));
+                await new Promise(resolve => setTimeout(resolve, 200));
+                await this.digWithAnimation(wallBlock);
+                minedAny = true;
+                logger.info(`[dig_up] Mined ${wallBlock.name} from wall - check inventory for blocks`);
+                // Mine up to 3 blocks to get enough for pillaring
+                const newPlaceableBlocks = this.bot.inventory.items().filter(item =>
+                  item.name.includes('cobblestone') || item.name.includes('dirt') ||
+                  item.name.includes('stone') || item.name.includes('gravel') ||
+                  item.name === 'sand' || item.name.includes('deepslate')
+                );
+                if (newPlaceableBlocks.length > 0 && newPlaceableBlocks.reduce((sum, i) => sum + i.count, 0) >= 3) {
+                  logger.info(`[dig_up] Got enough blocks: ${newPlaceableBlocks.map(i => `${i.count}x ${i.name}`).join(', ')}`);
+                  return `Mined wall blocks! Got ${newPlaceableBlocks.map(i => `${i.count}x ${i.name}`).join(', ')}. Now use dig_up again to pillar up.`;
+                }
+              } catch (e) {
+                logger.warn(`[dig_up] Failed to mine ${wallBlock.name}: ${e}`);
+              }
+            }
           }
+
+          if (minedAny) {
+            const newPlaceableBlocks = this.bot.inventory.items().filter(item =>
+              item.name.includes('cobblestone') || item.name.includes('dirt') ||
+              item.name.includes('stone') || item.name.includes('gravel')
+            );
+            if (newPlaceableBlocks.length > 0) {
+              return `Mined wall blocks! Got ${newPlaceableBlocks.map(i => `${i.count}x ${i.name}`).join(', ')}. Use dig_up again to climb.`;
+            }
+          }
+
+          return `Stuck at Y=${finalY}. Air above, mined walls but no placeable blocks dropped. Try moving horizontally to find dirt or gravel.`;
+        }
+
+        if (blockName === 'air') {
           return `Air above at Y=${finalY} but couldn't climb. Try "place ${placeableBlocks[0]?.name}" below you and jump, or "move" to find a different path.`;
         } else if (blockName.includes('stone') || blockName.includes('_ore') || blockName.includes('andesite') || blockName.includes('diorite') || blockName.includes('granite')) {
           return `Blocked by ${blockName} at Y=${finalY}. Need PICKAXE to continue. Cannot mine stone with bare hands. Explore horizontally to find wood for tools.`;

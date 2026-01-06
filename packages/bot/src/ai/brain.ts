@@ -1647,10 +1647,12 @@ export class AIBrain {
 
     // PRIORITY 0: If severely stuck (3+ consecutive failures), try targeted recovery
     if (consecutiveFailures >= 3) {
-      // If dig_up is failing, bot needs blocks to pillar - mine nearby walls
+      // If dig_up is failing, move horizontally to find new area (dig_up itself mines walls now)
       if (mostRecentFailure === 'dig_up') {
-        logger.info('[FALLBACK] dig_up failing, suggesting mine nearby blocks for pillar materials');
-        return { type: 'mine', target: 'nearby', reasoning: '[FALLBACK] dig_up stuck - mining blocks to pillar up' };
+        logger.info('[FALLBACK] dig_up failing, exploring horizontally to find better escape route');
+        const dirs = ['north', 'south', 'east', 'west'];
+        const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+        return { type: 'move', target: randomDir, reasoning: '[FALLBACK] dig_up stuck - exploring horizontally' };
       }
       // If movement is failing, try recover
       if (mostRecentFailure === 'move') {
@@ -1722,16 +1724,16 @@ export class AIBrain {
       if (!failedActionTypes.includes('dig_up')) {
         return { type: 'dig_up', target: '', reasoning: '[FALLBACK] Underground, digging up to surface' };
       } else {
-        // dig_up is failing - need to mine blocks for pillar materials or explore horizontally
-        logger.info('[FALLBACK] dig_up blacklisted, trying to mine nearby blocks or explore');
-        if (!failedActionTypes.includes('mine')) {
-          return { type: 'mine', target: 'nearby', reasoning: '[FALLBACK] dig_up failing - mining blocks to pillar up' };
-        }
-        // If mining also failing, try horizontal movement
+        // dig_up is failing - explore horizontally to find new area (dig_up mines walls internally now)
+        logger.info('[FALLBACK] dig_up blacklisted, exploring horizontally');
         if (!failedActionTypes.includes('move')) {
           const dirs = ['north', 'south', 'east', 'west'];
           const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
-          return { type: 'move', target: randomDir, reasoning: '[FALLBACK] Stuck underground, exploring horizontally' };
+          return { type: 'move', target: randomDir, reasoning: '[FALLBACK] dig_up stuck - exploring horizontally' };
+        }
+        // If movement also failing, try recover
+        if (!failedActionTypes.includes('recover')) {
+          return { type: 'recover', target: '', reasoning: '[FALLBACK] Stuck underground, attempting recovery' };
         }
       }
     }
