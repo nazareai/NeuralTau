@@ -2766,6 +2766,7 @@ export class MinecraftGame {
 
   /**
    * Swim to surface - for water escapes
+   * FIX: Now mines blocks above head while swimming (like a real player would)
    */
   private async swimToSurface(): Promise<string> {
     if (!this.bot) return 'Bot not initialized';
@@ -2773,39 +2774,155 @@ export class MinecraftGame {
     const startY = Math.floor(this.bot.entity.position.y);
     logger.info('[SWIM] Starting swim to surface from Y=' + startY);
 
+    // Blocks we can mine to escape (soft blocks that break quickly)
+    const mineableBlocks = new Set([
+      'dirt', 'grass_block', 'sand', 'gravel', 'clay', 'soul_sand', 'soul_soil',
+      'mud', 'moss_block', 'snow', 'powder_snow', 'cobweb', 'netherrack',
+      // All leaf types
+      'oak_leaves', 'birch_leaves', 'spruce_leaves', 'jungle_leaves',
+      'acacia_leaves', 'dark_oak_leaves', 'mangrove_leaves', 'azalea_leaves',
+      'flowering_azalea_leaves', 'cherry_leaves',
+      // Underwater blocks
+      'seagrass', 'tall_seagrass', 'kelp', 'kelp_plant',
+    ]);
+
+    // Also mine stone-type blocks if we have a pickaxe
+    const hasPickaxe = this.bot.inventory.items().some(item =>
+      item.name.includes('pickaxe')
+    );
+    if (hasPickaxe) {
+      ['stone', 'cobblestone', 'deepslate', 'sandstone', 'terracotta', 'andesite', 'diorite', 'granite'].forEach(b => mineableBlocks.add(b));
+    }
+
     // Hold jump to swim up
     this.bot.setControlState('jump', true);
     this.bot.setControlState('forward', true);
 
     const startTime = Date.now();
-    const timeout = 10000; // 10 second timeout
+    const timeout = 20000; // 20 second timeout (increased for mining)
+    let lastY = startY;
+    let stuckCount = 0;
+    let blocksMined = 0;
 
     while (Date.now() - startTime < timeout) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      if (!this.bot) break;
+
       const pos = this.bot.entity.position;
+      const currentY = Math.floor(pos.y);
       const currentBlock = this.bot.blockAt(pos);
-      
-      // Check if we've surfaced
+
+      // Check if we've surfaced (out of water)
       if (!currentBlock || currentBlock.name !== 'water') {
-        // We're out of water!
         this.bot.clearControlStates();
         const finalY = Math.floor(pos.y);
-        logger.info('[SWIM] Surfaced!', { startY, finalY });
+        logger.info('[SWIM] Surfaced!', { startY, finalY, blocksMined });
 
         // Now try to find shore
         const shoreResult = await this.findShore();
 
-        // FIX: Record successful water escape time for cooldown
+        // Record successful water escape time for cooldown
         this.stuckState.lastWaterEscapeTime = Date.now();
         logger.info('[SWIM] Water escape recorded for cooldown', { shoreResult });
 
-        return `Success! Swam to surface (Y=${startY} → Y=${finalY})`;
+        return `Success! Swam to surface (Y=${startY} → Y=${finalY})${blocksMined > 0 ? `, mined ${blocksMined} blocks` : ''}`;
       }
+
+      // FIX: Check if we're stuck (not gaining height) - might have ceiling
+      if (currentY <= lastY) {
+        stuckCount++;
+        logger.debug('[SWIM] Not gaining height', { currentY, lastY, stuckCount });
+
+        if (stuckCount >= 2) {
+          // We're stuck! Check for solid block above head and MINE IT
+          const headPos = pos.offset(0, 2, 0); // Block above head
+          const blockAbove = this.bot.blockAt(headPos);
+
+          if (blockAbove && blockAbove.name !== 'water' && blockAbove.name !== 'air') {
+            logger.info('[SWIM] Ceiling detected! Attempting to mine', {
+              block: blockAbove.name,
+              canMine: mineableBlocks.has(blockAbove.name) || blockAbove.name.includes('dirt') || blockAbove.name.includes('leaves')
+            });
+
+            // Check if we can mine it
+            const canMine = mineableBlocks.has(blockAbove.name) ||
+                           blockAbove.name.includes('leaves') ||
+                           blockAbove.name.includes('dirt') ||
+                           blockAbove.name.includes('sand') ||
+                           blockAbove.name.includes('gravel');
+
+            if (canMine) {
+              try {
+                // Stop swimming momentarily to mine
+                this.bot.clearControlStates();
+
+                // Look up at the block
+                await this.bot.lookAt(blockAbove.position.offset(0.5, 0.5, 0.5), false);
+                await new Promise(resolve => setTimeout(resolve, 150));
+
+                // Mine it!
+                await this.bot.dig(blockAbove);
+                blocksMined++;
+                logger.info('[SWIM] Mined ceiling block!', { block: blockAbove.name, totalMined: blocksMined });
+
+                // Resume swimming
+                this.bot.setControlState('jump', true);
+                this.bot.setControlState('forward', true);
+                stuckCount = 0; // Reset stuck counter
+              } catch (e) {
+                logger.warn('[SWIM] Failed to mine ceiling block', { block: blockAbove.name, error: (e as Error).message });
+                // Resume swimming anyway
+                this.bot.setControlState('jump', true);
+                this.bot.setControlState('forward', true);
+              }
+            } else {
+              logger.warn('[SWIM] Ceiling block not mineable without proper tool', { block: blockAbove.name });
+            }
+          }
+
+          // Also try mining block directly in front (horizontal escape)
+          if (stuckCount >= 4) {
+            const yaw = this.bot.entity.yaw;
+            const lookDir = new Vec3(-Math.sin(yaw), 0, -Math.cos(yaw));
+            const frontPos = pos.offset(lookDir.x * 1.2, 0.5, lookDir.z * 1.2);
+            const blockInFront = this.bot.blockAt(frontPos);
+
+            if (blockInFront && blockInFront.name !== 'water' && blockInFront.name !== 'air') {
+              const canMineFront = mineableBlocks.has(blockInFront.name) ||
+                                   blockInFront.name.includes('dirt') ||
+                                   blockInFront.name.includes('sand');
+
+              if (canMineFront) {
+                try {
+                  this.bot.clearControlStates();
+                  await this.bot.lookAt(blockInFront.position.offset(0.5, 0.5, 0.5), false);
+                  await new Promise(resolve => setTimeout(resolve, 150));
+                  await this.bot.dig(blockInFront);
+                  blocksMined++;
+                  logger.info('[SWIM] Mined front block!', { block: blockInFront.name });
+                  this.bot.setControlState('jump', true);
+                  this.bot.setControlState('forward', true);
+                  stuckCount = 0;
+                } catch (e) {
+                  logger.warn('[SWIM] Failed to mine front block', { error: (e as Error).message });
+                  this.bot.setControlState('jump', true);
+                  this.bot.setControlState('forward', true);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // We're making progress, reset stuck counter
+        stuckCount = 0;
+      }
+
+      lastY = currentY;
     }
 
     this.bot.clearControlStates();
-    return `Swim failed - still in water after ${timeout/1000}s`;
+    return `Swim failed - still in water after ${timeout/1000}s (mined ${blocksMined} blocks)`;
   }
 
   /**
