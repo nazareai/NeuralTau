@@ -177,9 +177,12 @@ export class MinecraftGame {
     lastSuccessfulMoveTime: Date.now(), // When did we last move successfully?
     positionHistoryForStuck: [] as { x: number; y: number; z: number; time: number }[], // Track position history
     lastWaterEscapeTime: 0,          // FIX: Track when we last escaped water to prevent immediate re-trigger
+    totalWaterRecoveryFailures: 0,   // FIX: Track total failed water recovery attempts
+    lastWaterRecoveryPosition: null as { x: number; z: number } | null, // FIX: Track where we keep failing
   };
   private readonly WATER_ESCAPE_COOLDOWN_MS = 5000; // 5 second cooldown after water escape
   private readonly MAX_RECOVERY_ATTEMPTS = 5;
+  private readonly MAX_WATER_RECOVERY_FAILURES = 10; // FIX: After 10 failures at same spot, give up
   private readonly STUCK_THRESHOLD_MS = 30000; // If no successful move in 30s, consider stuck
 
   constructor() {
@@ -2356,11 +2359,39 @@ export class MinecraftGame {
     const pos = this.bot.entity.position;
     const startPos = pos.clone(); // Track for actual movement verification
     const currentY = Math.floor(pos.y);
-    
+    const currentXZ = { x: Math.floor(pos.x), z: Math.floor(pos.z) };
+
+    // FIX: Track if we keep failing at the same location
+    if (this.stuckState.lastWaterRecoveryPosition) {
+      const sameLocation = Math.abs(currentXZ.x - this.stuckState.lastWaterRecoveryPosition.x) < 5 &&
+                          Math.abs(currentXZ.z - this.stuckState.lastWaterRecoveryPosition.z) < 5;
+      if (sameLocation) {
+        this.stuckState.totalWaterRecoveryFailures++;
+      } else {
+        // New location, reset counter
+        this.stuckState.totalWaterRecoveryFailures = 1;
+      }
+    } else {
+      this.stuckState.totalWaterRecoveryFailures = 1;
+    }
+    this.stuckState.lastWaterRecoveryPosition = currentXZ;
+
+    // FIX: If we've failed too many times at this spot, GIVE UP and let AI reason
+    if (this.stuckState.totalWaterRecoveryFailures >= this.MAX_WATER_RECOVERY_FAILURES) {
+      logger.error('[STUCK-RECOVERY] TOO MANY FAILURES! Giving up on water escape at this location', {
+        failures: this.stuckState.totalWaterRecoveryFailures,
+        position: `${currentXZ.x}, ${currentXZ.z}`
+      });
+      this.resetStuckState();
+      this.stuckState.totalWaterRecoveryFailures = 0; // Reset for next time
+      return `STUCK: Failed ${this.MAX_WATER_RECOVERY_FAILURES} times to escape water. Need alternative strategy (respawn, teleport, or different approach).`;
+    }
+
     logger.warn('[STUCK-RECOVERY] Starting stuck recovery!', {
       position: `${pos.x.toFixed(0)}, ${pos.y.toFixed(0)}, ${pos.z.toFixed(0)}`,
       attempt: this.stuckState.currentRecoveryAttempts + 1,
-      maxAttempts: this.MAX_RECOVERY_ATTEMPTS
+      maxAttempts: this.MAX_RECOVERY_ATTEMPTS,
+      totalWaterFailures: this.stuckState.totalWaterRecoveryFailures
     });
 
     // CRITICAL: Disable idle looking during recovery!
@@ -2368,11 +2399,28 @@ export class MinecraftGame {
     this.humanBehavior?.notifyTaskStart('recovery');
 
     this.stuckState.isInRecoveryMode = true;
+    this.stuckState.recoveryStartTime = Date.now(); // FIX: Set recovery start time!
     this.stuckState.currentRecoveryAttempts++;
 
-    // Check if we're in water first
-    const currentBlock = this.bot.blockAt(pos);
-    const isInWater = currentBlock?.name === 'water' || currentBlock?.name === 'flowing_water';
+    // Check if we're in water - check BODY and HEAD, not just feet!
+    // FIX: Bot at water surface has 'air' at feet but 'water' at body/below
+    const feetBlock = this.bot.blockAt(pos);
+    const bodyBlock = this.bot.blockAt(pos.offset(0, 0.5, 0));
+    const headBlock = this.bot.blockAt(pos.offset(0, 1.6, 0));
+    const belowBlock = this.bot.blockAt(pos.offset(0, -0.5, 0));
+
+    const isInWater = feetBlock?.name === 'water' || feetBlock?.name === 'flowing_water' ||
+                      bodyBlock?.name === 'water' || bodyBlock?.name === 'flowing_water' ||
+                      headBlock?.name === 'water' || headBlock?.name === 'flowing_water' ||
+                      belowBlock?.name === 'water' || belowBlock?.name === 'flowing_water';
+
+    logger.info('[STUCK-RECOVERY] Water check', {
+      feet: feetBlock?.name,
+      body: bodyBlock?.name,
+      head: headBlock?.name,
+      below: belowBlock?.name,
+      isInWater
+    });
 
     if (isInWater) {
       const swimResult = await this.swimToSurface();
@@ -2902,22 +2950,40 @@ export class MinecraftGame {
 
       const pos = this.bot.entity.position;
       const currentY = Math.floor(pos.y);
-      const currentBlock = this.bot.blockAt(pos);
 
-      // Check if we've surfaced (out of water)
-      if (!currentBlock || currentBlock.name !== 'water') {
+      // FIX: Check BODY and HEAD for water, not just feet!
+      // Bot at water surface has 'air' at feet but might still be in water pit
+      const feetBlock = this.bot.blockAt(pos);
+      const bodyBlock = this.bot.blockAt(pos.offset(0, 0.5, 0));
+      const headBlock = this.bot.blockAt(pos.offset(0, 1.6, 0));
+      const belowBlock = this.bot.blockAt(pos.offset(0, -0.5, 0));
+
+      const stillInWater = feetBlock?.name === 'water' || feetBlock?.name === 'flowing_water' ||
+                           bodyBlock?.name === 'water' || bodyBlock?.name === 'flowing_water' ||
+                           headBlock?.name === 'water' || headBlock?.name === 'flowing_water' ||
+                           belowBlock?.name === 'water' || belowBlock?.name === 'flowing_water';
+
+      // Check if we've TRULY surfaced (completely out of water)
+      if (!stillInWater) {
         this.bot.clearControlStates();
         const finalY = Math.floor(pos.y);
-        logger.info('[SWIM] Surfaced!', { startY, finalY, blocksMined });
+        logger.info('[SWIM] Surfaced!', { startY, finalY, blocksMined, feet: feetBlock?.name, body: bodyBlock?.name });
 
         // Now try to find shore
         const shoreResult = await this.findShore();
 
-        // Record successful water escape time for cooldown
-        this.stuckState.lastWaterEscapeTime = Date.now();
-        logger.info('[SWIM] Water escape recorded for cooldown', { shoreResult });
-
-        return `Success! Swam to surface (Y=${startY} → Y=${finalY})${blocksMined > 0 ? `, mined ${blocksMined} blocks` : ''}`;
+        // FIX: Only return Success if we actually found shore or moved away from water
+        if (shoreResult.includes('shore') || shoreResult.includes('dry land') || shoreResult.includes('Escaped')) {
+          this.stuckState.lastWaterEscapeTime = Date.now();
+          logger.info('[SWIM] Water escape recorded for cooldown', { shoreResult });
+          return `Success! Swam to surface (Y=${startY} → Y=${finalY})${blocksMined > 0 ? `, mined ${blocksMined} blocks` : ''}`;
+        } else {
+          // Failed to find shore - we might still be in a water pit
+          logger.warn('[SWIM] Surfaced but failed to find shore, continuing to try', { shoreResult });
+          // Resume swimming/trying instead of returning false success
+          this.bot.setControlState('jump', true);
+          this.bot.setControlState('forward', true);
+        }
       }
 
       // FIX: Check if we're stuck (not gaining height) - might have ceiling
