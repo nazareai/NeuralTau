@@ -1781,8 +1781,11 @@ export class MinecraftGame {
       const initialDistance = horizontalDist;
       let minDistanceAchieved = initialDistance;
       let lastProgressTime = startTime;
-      const BAD_PATH_THRESHOLD = 5; // Abort if we're 5+ blocks further than we started
-      const STUCK_TIMEOUT = 4000; // Abort if no progress toward target for 4 seconds
+      const startY = this.bot.entity.position.y; // Track starting Y for fall detection
+      const BAD_PATH_THRESHOLD = 3; // Abort if we're 3+ blocks further than we started (reduced from 5)
+      const STUCK_TIMEOUT = 2500; // Abort if no progress toward target for 2.5 seconds (reduced from 4s)
+      const MAX_FALL_DISTANCE = 4; // Abort if we fall more than 4 blocks
+      const EARLY_ABORT_TIME = 1500; // Check direction in first 1.5 seconds
 
       // Log movement session start
       movementLogger.logSessionStart(sessionId, targetX, targetY, targetZ, label);
@@ -1875,6 +1878,43 @@ export class MinecraftGame {
             movementLogger.logSessionEnd(sessionId, 'BAD_PATH', elapsed);
             resolve(result);
             return;
+          }
+
+          // FALL DETECTION: Abort if we've fallen too far (bot going into caves)
+          const currentY = this.bot.entity.position.y;
+          const yDrop = startY - currentY;
+          if (yDrop > MAX_FALL_DISTANCE) {
+            clearInterval(checkInterval);
+            clearInterval(logInterval);
+            this.bot.pathfinder.setGoal(null);
+            logger.warn(`[PATHFINDER-${sessionId}] FELL TOO FAR - aborting`, {
+              startY: startY.toFixed(1),
+              currentY: currentY.toFixed(1),
+              dropped: yDrop.toFixed(1)
+            });
+            const result = `Fell ${yDrop.toFixed(0)} blocks during navigation - aborting to prevent falling into cave`;
+            movementLogger.logSessionEnd(sessionId, 'FELL', elapsed);
+            resolve(result);
+            return;
+          }
+
+          // EARLY WRONG-DIRECTION DETECTION: In first 1.5s, abort if going wrong way
+          if (elapsed < EARLY_ABORT_TIME && elapsed > 500) {
+            // After 500ms, check if we're going the wrong direction
+            if (currentVec.horizontalDist > initialDistance + 1.5) {
+              clearInterval(checkInterval);
+              clearInterval(logInterval);
+              this.bot.pathfinder.setGoal(null);
+              logger.warn(`[PATHFINDER-${sessionId}] EARLY ABORT - wrong direction`, {
+                elapsed: `${elapsed}ms`,
+                initial: initialDistance.toFixed(1),
+                current: currentVec.horizontalDist.toFixed(1)
+              });
+              const result = `Wrong direction detected early - went further from ${label}`;
+              movementLogger.logSessionEnd(sessionId, 'EARLY_ABORT', elapsed);
+              resolve(result);
+              return;
+            }
           }
 
           // ================================================================
@@ -7472,15 +7512,32 @@ ${aiAnalysis}
     const originalLook = this.bot.look.bind(this.bot);
 
     // Override bot.look with dual-mode control
+    // Track last navigation yaw for rate limiting
+    let lastNavYaw = this.bot.entity?.yaw ?? 0;
+
     this.bot.look = (yaw: number, pitch: number, force?: boolean) => {
       // Normalize incoming yaw to [-π, π]
       while (yaw > Math.PI) yaw -= 2 * Math.PI;
       while (yaw < -Math.PI) yaw += 2 * Math.PI;
 
-      // DUAL MODE: If pathfinder is actively navigating, bypass smoothing entirely
-      // This lets pathfinder control look direction directly for responsive movement
+      // DUAL MODE: If pathfinder is actively navigating, apply RATE-LIMITED look
+      // This prevents jarring 145° yaw snaps while still allowing responsive movement
       if (this.isNavigating && this.bot?.pathfinder?.isMoving?.()) {
-        // Direct look - no smoothing during active pathfinding
+        // Calculate yaw difference (shortest path)
+        let yawDiff = yaw - lastNavYaw;
+        while (yawDiff > Math.PI) yawDiff -= 2 * Math.PI;
+        while (yawDiff < -Math.PI) yawDiff += 2 * Math.PI;
+
+        // Rate limit: max 60° per call (~1.05 radians) - fast but not jarring
+        const MAX_YAW_CHANGE = 1.05; // ~60 degrees
+        if (Math.abs(yawDiff) > MAX_YAW_CHANGE) {
+          yaw = lastNavYaw + Math.sign(yawDiff) * MAX_YAW_CHANGE;
+          // Normalize
+          while (yaw > Math.PI) yaw -= 2 * Math.PI;
+          while (yaw < -Math.PI) yaw += 2 * Math.PI;
+        }
+
+        lastNavYaw = yaw;
         return originalLook(yaw, pitch, force);
       }
 
